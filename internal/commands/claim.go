@@ -69,7 +69,10 @@ func runClaim(cmd *cobra.Command, args []string) error {
 		green := color.New(color.FgGreen)
 		green.Printf("Task %s claimed by %s\n", id, agentName)
 	} else {
-		out, _ := json.Marshal(task)
+		out, _ := json.Marshal(struct {
+			ID    string `json:"id"`
+			Owner string `json:"owner"`
+		}{task.ID, *task.Owner})
 		fmt.Println(string(out))
 	}
 

@@ -74,7 +74,10 @@ func runUnblock(cmd *cobra.Command, args []string) error {
 		green := color.New(color.FgGreen)
 		green.Printf("Task %s is no longer blocked by %s\n", blockedID, blockerID)
 	} else {
-		out, _ := json.Marshal(blocked)
+		out, _ := json.Marshal(struct {
+			ID        string   `json:"id"`
+			BlockedBy []string `json:"blockedBy"`
+		}{blocked.ID, blocked.BlockedBy})
 		fmt.Println(string(out))
 	}
 

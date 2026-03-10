@@ -50,7 +50,10 @@ func runUnparent(cmd *cobra.Command, args []string) error {
 			yellow := color.New(color.FgYellow)
 			yellow.Printf("Task %s is already a top-level task\n", id)
 		} else {
-			out, _ := json.Marshal(task)
+			out, _ := json.Marshal(struct {
+				ID     string  `json:"id"`
+				Parent *string `json:"parent"`
+			}{task.ID, nil})
 			fmt.Println(string(out))
 		}
 		return nil
@@ -69,7 +72,10 @@ func runUnparent(cmd *cobra.Command, args []string) error {
 		green := color.New(color.FgGreen)
 		green.Printf("Task %s is now a top-level task\n", id)
 	} else {
-		out, _ := json.Marshal(task)
+		out, _ := json.Marshal(struct {
+			ID     string  `json:"id"`
+			Parent *string `json:"parent"`
+		}{task.ID, nil})
 		fmt.Println(string(out))
 	}
 

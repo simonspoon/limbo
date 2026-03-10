@@ -65,7 +65,10 @@ func runNote(cmd *cobra.Command, args []string) error {
 		green := color.New(color.FgGreen)
 		green.Printf("Added note to task %s\n", id)
 	} else {
-		out, _ := json.Marshal(task)
+		out, _ := json.Marshal(struct {
+			ID        string `json:"id"`
+			NoteCount int    `json:"noteCount"`
+		}{task.ID, len(task.Notes)})
 		fmt.Println(string(out))
 	}
 

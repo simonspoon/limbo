@@ -96,7 +96,9 @@ Valid values for `<status>`: `todo`, `in-progress`, `done`.
 
 **Output (JSON)**
 
-Returns the updated task object.
+```json
+{"id": "abcd", "status": "done"}
+```
 
 **Constraints and errors**
 
@@ -181,7 +183,9 @@ clipm parent <id> <parent-id> [flags]
 
 **Output (JSON)**
 
-Returns the updated child task object.
+```json
+{"id": "abcd", "parent": "efgh"}
+```
 
 **Constraints and errors**
 
@@ -210,7 +214,9 @@ clipm unparent <id> [flags]
 
 **Output (JSON)**
 
-Returns the updated task object with `parent` set to `null`.
+```json
+{"id": "abcd", "parent": null}
+```
 
 **Notes**
 
@@ -389,7 +395,9 @@ clipm block <blocker-id> <blocked-id> [flags]
 
 **Output (JSON)**
 
-Returns the updated `<blocked-id>` task object, with `<blocker-id>` appended to its `blockedBy` list.
+```json
+{"id": "abcd", "blockedBy": ["efgh"]}
+```
 
 **Constraints and errors**
 
@@ -419,7 +427,9 @@ clipm unblock <blocker-id> <blocked-id> [flags]
 
 **Output (JSON)**
 
-Returns the updated `<blocked-id>` task object.
+```json
+{"id": "abcd", "blockedBy": []}
+```
 
 **Errors**
 
@@ -448,7 +458,9 @@ clipm claim <id> <agent-name> [flags]
 
 **Output (JSON)**
 
-Returns the updated task object.
+```json
+{"id": "abcd", "owner": "agent-1"}
+```
 
 **Constraints and errors**
 
@@ -475,7 +487,9 @@ clipm unclaim <id> [flags]
 
 **Output (JSON)**
 
-Returns the updated task object with `owner` set to `null`.
+```json
+{"id": "abcd", "owner": null}
+```
 
 **Errors**
 
@@ -503,15 +517,8 @@ clipm note <id> <message> [flags]
 
 **Output (JSON)**
 
-Returns the updated task object. The new note appears at the end of the `notes` array.
-
 ```json
-{
-  "notes": [
-    {"content": "Started investigation.", "timestamp": "..."},
-    {"content": "Found root cause.", "timestamp": "..."}
-  ]
-}
+{"id": "abcd", "noteCount": 2}
 ```
 
 **Errors**

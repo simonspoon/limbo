@@ -94,7 +94,10 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		green := color.New(color.FgGreen)
 		green.Printf("Updated task %s status: %s\n", task.ID, newStatus)
 	} else {
-		out, _ := json.Marshal(task)
+		out, _ := json.Marshal(struct {
+			ID     string `json:"id"`
+			Status string `json:"status"`
+		}{task.ID, task.Status})
 		fmt.Println(string(out))
 	}
 

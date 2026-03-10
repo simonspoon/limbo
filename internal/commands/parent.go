@@ -82,7 +82,10 @@ func runParent(cmd *cobra.Command, args []string) error {
 		green := color.New(color.FgGreen)
 		green.Printf("Task %s is now a child of %s\n", childID, parentID)
 	} else {
-		out, _ := json.Marshal(childTask)
+		out, _ := json.Marshal(struct {
+			ID     string `json:"id"`
+			Parent string `json:"parent"`
+		}{childTask.ID, *childTask.Parent})
 		fmt.Println(string(out))
 	}
 

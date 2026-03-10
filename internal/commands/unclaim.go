@@ -59,7 +59,10 @@ func runUnclaim(cmd *cobra.Command, args []string) error {
 		green := color.New(color.FgGreen)
 		green.Printf("Task %s ownership cleared\n", id)
 	} else {
-		out, _ := json.Marshal(task)
+		out, _ := json.Marshal(struct {
+			ID    string  `json:"id"`
+			Owner *string `json:"owner"`
+		}{task.ID, nil})
 		fmt.Println(string(out))
 	}
 
