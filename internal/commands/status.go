@@ -90,9 +90,14 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	printStatusUpdate(task)
+	return nil
+}
+
+func printStatusUpdate(task *models.Task) {
 	if statusPretty {
 		green := color.New(color.FgGreen)
-		green.Printf("Updated task %s status: %s\n", task.ID, newStatus)
+		green.Printf("Updated task %s status: %s\n", task.ID, task.Status)
 	} else {
 		out, _ := json.Marshal(struct {
 			ID     string `json:"id"`
@@ -100,8 +105,6 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		}{task.ID, task.Status})
 		fmt.Println(string(out))
 	}
-
-	return nil
 }
 
 func validateStatusTransition(store *storage.Storage, task *models.Task, newStatus string) error {
