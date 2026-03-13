@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/simonspoon/clipm/internal/models"
-	"github.com/simonspoon/clipm/internal/storage"
+	"github.com/simonspoon/limbo/internal/models"
+	"github.com/simonspoon/limbo/internal/storage"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
@@ -206,7 +206,7 @@ func clearAndRender(tasks []models.Task, rawMode bool) {
 	fmt.Fprint(&buf, "\033[H\033[2J")
 
 	// Header
-	fmt.Fprintf(&buf, "clipm watch - %s\n", time.Now().Format("15:04:05"))
+	fmt.Fprintf(&buf, "limbo watch - %s\n", time.Now().Format("15:04:05"))
 	fmt.Fprintf(&buf, "Tasks: %d todo, %d in-progress, %d done\n\n",
 		countByStatus(tasks, models.StatusTodo),
 		countByStatus(tasks, models.StatusInProgress),

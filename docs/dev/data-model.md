@@ -1,6 +1,6 @@
 # Data Model
 
-This document is a precise reference for the data structures used by clipm. All types are defined in Go source; JSON representations are what appears in `.clipm/tasks.json` and in command output.
+This document is a precise reference for the data structures used by limbo. All types are defined in Go source; JSON representations are what appears in `.limbo/tasks.json` and in command output.
 
 ## Source Files
 
@@ -43,7 +43,7 @@ type Task struct {
 | `Action` | `string` | `"action,omitempty"` | What concrete work to perform. Required at task creation (v4+). Omitted from JSON when empty. |
 | `Verify` | `string` | `"verify,omitempty"` | How to confirm the action succeeded. Required at task creation (v4+). Omitted from JSON when empty. |
 | `Result` | `string` | `"result,omitempty"` | Template for what to report back when done. Required at task creation (v4+). Omitted from JSON when empty. |
-| `Outcome` | `string` | `"outcome,omitempty"` | Actual result reported when a structured task is marked `done`. Set via `clipm status --outcome`. Omitted from JSON when empty. |
+| `Outcome` | `string` | `"outcome,omitempty"` | Actual result reported when a structured task is marked `done`. Set via `limbo status --outcome`. Omitted from JSON when empty. |
 | `Parent` | `*string` | `"parent"` | Pointer to the parent task's ID. `null` in JSON means the task is a root task. Always present in JSON (not omitempty). |
 | `Status` | `string` | `"status"` | Lifecycle state. One of `"todo"`, `"in-progress"`, `"done"`. |
 | `BlockedBy` | `[]string` | `"blockedBy,omitempty"` | List of task IDs that must reach `"done"` before this task can be started. Omitted from JSON when empty. |
@@ -106,7 +106,7 @@ Valid transitions are enforced by commands. Notably: a task cannot be set to `"d
 
 ## TaskStore
 
-Defined in `internal/storage/storage.go`. This is the root object of `.clipm/tasks.json`.
+Defined in `internal/storage/storage.go`. This is the root object of `.limbo/tasks.json`.
 
 ```go
 type TaskStore struct {
@@ -148,7 +148,7 @@ Exactly one of `Task` or `Candidates` will be populated in a successful response
 
 ## WatchEvent
 
-Defined in `internal/commands/watch.go`. Emitted to stdout by `clipm watch` (JSON mode) whenever the task store changes.
+Defined in `internal/commands/watch.go`. Emitted to stdout by `limbo watch` (JSON mode) whenever the task store changes.
 
 ```go
 type WatchEvent struct {

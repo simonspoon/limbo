@@ -1,6 +1,6 @@
 package commands
 
-import "github.com/simonspoon/clipm/internal/models"
+import "github.com/simonspoon/limbo/internal/models"
 
 // filterCompletedTasks removes done tasks that are "fully resolved" from the display.
 // A done task is hidden if:

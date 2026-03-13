@@ -10,18 +10,18 @@ import (
 	"sort"
 	"time"
 
-	"github.com/simonspoon/clipm/internal/models"
+	"github.com/simonspoon/limbo/internal/models"
 )
 
 // Storage directory and file names.
 const (
-	ClipmDir  = ".clipm"
+	LimboDir  = ".limbo"
 	TasksFile = "tasks.json"
 )
 
 // Storage errors.
 var (
-	ErrNotInProject = errors.New("not in a clipm project. Run 'clipm init' first")
+	ErrNotInProject = errors.New("not in a limbo project. Run 'limbo init' first")
 	ErrTaskNotFound = errors.New("task not found")
 )
 
@@ -31,7 +31,7 @@ type TaskStore struct {
 	Tasks   []models.Task `json:"tasks"`
 }
 
-// Storage handles all file operations for clipm
+// Storage handles all file operations for limbo
 type Storage struct {
 	rootDir string
 }
@@ -50,7 +50,7 @@ func NewStorageAt(dir string) *Storage {
 	return &Storage{rootDir: dir}
 }
 
-// findProjectRoot searches for the .clipm directory in current or parent directories
+// findProjectRoot searches for the .limbo directory in current or parent directories
 func findProjectRoot() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -58,8 +58,8 @@ func findProjectRoot() (string, error) {
 	}
 
 	for {
-		clipmPath := filepath.Join(dir, ClipmDir)
-		if info, err := os.Stat(clipmPath); err == nil && info.IsDir() {
+		limboPath := filepath.Join(dir, LimboDir)
+		if info, err := os.Stat(limboPath); err == nil && info.IsDir() {
 			return dir, nil
 		}
 
@@ -71,18 +71,18 @@ func findProjectRoot() (string, error) {
 	}
 }
 
-// Init initializes a new clipm project
+// Init initializes a new limbo project
 func (s *Storage) Init() error {
-	clipmPath := filepath.Join(s.rootDir, ClipmDir)
+	limboPath := filepath.Join(s.rootDir, LimboDir)
 
 	// Check if already exists
-	if _, err := os.Stat(clipmPath); err == nil {
-		return fmt.Errorf(".clipm directory already exists")
+	if _, err := os.Stat(limboPath); err == nil {
+		return fmt.Errorf(".limbo directory already exists")
 	}
 
-	// Create .clipm directory
-	if err := os.Mkdir(clipmPath, 0755); err != nil {
-		return fmt.Errorf("failed to create .clipm directory: %w", err)
+	// Create .limbo directory
+	if err := os.Mkdir(limboPath, 0755); err != nil {
+		return fmt.Errorf("failed to create .limbo directory: %w", err)
 	}
 
 	// Create empty task store
@@ -475,7 +475,7 @@ type LegacyTaskStore struct {
 
 // loadStore reads the tasks.json file
 func (s *Storage) loadStore() (*TaskStore, error) {
-	storePath := filepath.Join(s.rootDir, ClipmDir, TasksFile)
+	storePath := filepath.Join(s.rootDir, LimboDir, TasksFile)
 
 	data, err := os.ReadFile(storePath)
 	if err != nil {
@@ -519,7 +519,7 @@ func (s *Storage) migrateFromV2(data []byte) (*TaskStore, error) {
 	}
 
 	// Create backup before migration
-	storePath := filepath.Join(s.rootDir, ClipmDir, TasksFile)
+	storePath := filepath.Join(s.rootDir, LimboDir, TasksFile)
 	backupPath := storePath + ".bak"
 	if err := os.WriteFile(backupPath, data, 0644); err != nil {
 		return nil, fmt.Errorf("failed to create backup: %w", err)
@@ -591,7 +591,7 @@ func (s *Storage) migrateFromV2(data []byte) (*TaskStore, error) {
 // migrateFromV3 migrates from v3.0.0 to v4.0.0 (adds structured fields, which default to "")
 func (s *Storage) migrateFromV3(data []byte) (*TaskStore, error) {
 	// Create backup before migration
-	storePath := filepath.Join(s.rootDir, ClipmDir, TasksFile)
+	storePath := filepath.Join(s.rootDir, LimboDir, TasksFile)
 	backupPath := storePath + ".v3.bak"
 	if err := os.WriteFile(backupPath, data, 0644); err != nil {
 		return nil, fmt.Errorf("failed to create backup: %w", err)
@@ -616,7 +616,7 @@ func (s *Storage) migrateFromV3(data []byte) (*TaskStore, error) {
 
 // saveStore writes the tasks.json file
 func (s *Storage) saveStore(store *TaskStore) error {
-	storePath := filepath.Join(s.rootDir, ClipmDir, TasksFile)
+	storePath := filepath.Join(s.rootDir, LimboDir, TasksFile)
 
 	data, err := json.MarshalIndent(store, "", "  ")
 	if err != nil {

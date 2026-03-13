@@ -1,6 +1,6 @@
 # Command Reference
 
-All clipm commands output JSON by default for easy machine parsing. Pass `--pretty` to any command for human-readable, colored output.
+All limbo commands output JSON by default for easy machine parsing. Pass `--pretty` to any command for human-readable, colored output.
 
 Task IDs are 4-character lowercase alphabetic strings (e.g., `abcd`). IDs are case-insensitive — `ABCD` and `abcd` refer to the same task.
 
@@ -8,14 +8,14 @@ Task IDs are 4-character lowercase alphabetic strings (e.g., `abcd`). IDs are ca
 
 ## Setup
 
-### `clipm init`
+### `limbo init`
 
-Initialize clipm in the current directory. Creates `.clipm/tasks.json`.
+Initialize limbo in the current directory. Creates `.limbo/tasks.json`.
 
 **Usage**
 
 ```
-clipm init [flags]
+limbo init [flags]
 ```
 
 **Flags**
@@ -32,20 +32,20 @@ clipm init [flags]
 
 **Errors**
 
-- `.clipm/` already exists in the current directory.
+- `.limbo/` already exists in the current directory.
 
 ---
 
 ## Task Management
 
-### `clipm add <name>`
+### `limbo add <name>`
 
 Add a new task with the given name. New tasks start with status `todo`.
 
 **Usage**
 
 ```
-clipm add <name> [flags]
+limbo add <name> [flags]
 ```
 
 **Flags**
@@ -75,14 +75,14 @@ abcd
 
 ---
 
-### `clipm status <id> <status>`
+### `limbo status <id> <status>`
 
 Update the status of a task.
 
 **Usage**
 
 ```
-clipm status <id> <status> [flags]
+limbo status <id> <status> [flags]
 ```
 
 Valid values for `<status>`: `todo`, `in-progress`, `done`.
@@ -109,14 +109,14 @@ Valid values for `<status>`: `todo`, `in-progress`, `done`.
 
 ---
 
-### `clipm delete <id>`
+### `limbo delete <id>`
 
 Delete a task.
 
 **Usage**
 
 ```
-clipm delete <id> [flags]
+limbo delete <id> [flags]
 ```
 
 **Flags**
@@ -139,14 +139,14 @@ clipm delete <id> [flags]
 
 ---
 
-### `clipm prune`
+### `limbo prune`
 
 Remove all completed tasks. Only deletes tasks with status `done` that have no undone children.
 
 **Usage**
 
 ```
-clipm prune [flags]
+limbo prune [flags]
 ```
 
 **Flags**
@@ -165,14 +165,14 @@ If there are no tasks to prune: `{"deleted": [], "count": 0}`.
 
 ---
 
-### `clipm parent <id> <parent-id>`
+### `limbo parent <id> <parent-id>`
 
 Set the parent of a task, creating a hierarchical relationship. The task becomes a child of the specified parent.
 
 **Usage**
 
 ```
-clipm parent <id> <parent-id> [flags]
+limbo parent <id> <parent-id> [flags]
 ```
 
 **Flags**
@@ -196,14 +196,14 @@ clipm parent <id> <parent-id> [flags]
 
 ---
 
-### `clipm unparent <id>`
+### `limbo unparent <id>`
 
 Remove a task's parent, making it a top-level task.
 
 **Usage**
 
 ```
-clipm unparent <id> [flags]
+limbo unparent <id> [flags]
 ```
 
 **Flags**
@@ -226,14 +226,14 @@ clipm unparent <id> [flags]
 
 ## Viewing
 
-### `clipm list`
+### `limbo list`
 
 List tasks with optional filtering.
 
 **Usage**
 
 ```
-clipm list [flags]
+limbo list [flags]
 ```
 
 **Flags**
@@ -263,14 +263,14 @@ By default, "fully resolved" done tasks are hidden. See the [Visibility Rules](#
 
 ---
 
-### `clipm tree`
+### `limbo tree`
 
 Display tasks as a hierarchical tree showing parent-child relationships.
 
 **Usage**
 
 ```
-clipm tree [flags]
+limbo tree [flags]
 ```
 
 **Flags**
@@ -290,14 +290,14 @@ By default, "fully resolved" done tasks are hidden. See the [Visibility Rules](#
 
 ---
 
-### `clipm show <id>`
+### `limbo show <id>`
 
 Display detailed information about a single task, including its blockers and the tasks it blocks.
 
 **Usage**
 
 ```
-clipm show <id> [flags]
+limbo show <id> [flags]
 ```
 
 **Flags**
@@ -333,14 +333,14 @@ The `blockers` field resolves each ID in `blockedBy` to `{id, name, status}`. Th
 
 ---
 
-### `clipm next`
+### `limbo next`
 
 Return the next task to work on, using depth-first traversal.
 
 **Usage**
 
 ```
-clipm next [flags]
+limbo next [flags]
 ```
 
 **Flags**
@@ -377,14 +377,14 @@ When in-progress tasks exist, `next` finds the deepest in-progress task in the h
 
 ## Dependencies
 
-### `clipm block <blocker-id> <blocked-id>`
+### `limbo block <blocker-id> <blocked-id>`
 
 Add a dependency: `<blocked-id>` will wait for `<blocker-id>` to be `done` before it can be started.
 
 **Usage**
 
 ```
-clipm block <blocker-id> <blocked-id> [flags]
+limbo block <blocker-id> <blocked-id> [flags]
 ```
 
 **Flags**
@@ -409,14 +409,14 @@ clipm block <blocker-id> <blocked-id> [flags]
 
 ---
 
-### `clipm unblock <blocker-id> <blocked-id>`
+### `limbo unblock <blocker-id> <blocked-id>`
 
 Remove a dependency: remove `<blocker-id>` from `<blocked-id>`'s `blockedBy` list.
 
 **Usage**
 
 ```
-clipm unblock <blocker-id> <blocked-id> [flags]
+limbo unblock <blocker-id> <blocked-id> [flags]
 ```
 
 **Flags**
@@ -439,14 +439,14 @@ clipm unblock <blocker-id> <blocked-id> [flags]
 
 ## Ownership
 
-### `clipm claim <id> <agent-name>`
+### `limbo claim <id> <agent-name>`
 
 Set the owner of a task to the specified agent name.
 
 **Usage**
 
 ```
-clipm claim <id> <agent-name> [flags]
+limbo claim <id> <agent-name> [flags]
 ```
 
 **Flags**
@@ -469,14 +469,14 @@ clipm claim <id> <agent-name> [flags]
 
 ---
 
-### `clipm unclaim <id>`
+### `limbo unclaim <id>`
 
 Remove the owner from a task.
 
 **Usage**
 
 ```
-clipm unclaim <id> [flags]
+limbo unclaim <id> [flags]
 ```
 
 **Flags**
@@ -499,14 +499,14 @@ clipm unclaim <id> [flags]
 
 ## Notes
 
-### `clipm note <id> <message>`
+### `limbo note <id> <message>`
 
 Append a timestamped note to a task. Notes are append-only and cannot be edited or deleted.
 
 **Usage**
 
 ```
-clipm note <id> <message> [flags]
+limbo note <id> <message> [flags]
 ```
 
 **Flags**
@@ -530,14 +530,14 @@ clipm note <id> <message> [flags]
 
 ## Watch
 
-### `clipm watch`
+### `limbo watch`
 
 Continuously monitor tasks and display updates. Press `q` or `Ctrl+C` to exit.
 
 **Usage**
 
 ```
-clipm watch [flags]
+limbo watch [flags]
 ```
 
 **Flags**
@@ -573,7 +573,7 @@ Example events:
 
 **Output (pretty mode)**
 
-Clears the terminal screen on each tick and redraws the task hierarchy as a tree (same format as `clipm tree --pretty`). A header shows the current time and a count of tasks by status. Press `q` or `Ctrl+C` to exit.
+Clears the terminal screen on each tick and redraws the task hierarchy as a tree (same format as `limbo tree --pretty`). A header shows the current time and a count of tasks by status. Press `q` or `Ctrl+C` to exit.
 
 **Visibility**
 

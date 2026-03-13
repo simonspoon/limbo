@@ -1,60 +1,60 @@
-# clipm
+# limbo
 
 A CLI-based task manager designed for use by LLMs and AI agents.
 
-clipm uses a single JSON file (`.clipm/tasks.json`) for storage and outputs JSON by default for easy parsing. It supports hierarchical task structures with progressive decomposition workflows.
+limbo uses a single JSON file (`.limbo/tasks.json`) for storage and outputs JSON by default for easy parsing. It supports hierarchical task structures with progressive decomposition workflows.
 
 ## Installation
 
 ```bash
-go install github.com/simonspoon/clipm/cmd/clipm@latest
+go install github.com/simonspoon/limbo/cmd/limbo@latest
 ```
 
 Or build from source:
 
 ```bash
-git clone https://github.com/simonspoon/clipm.git
-cd clipm
-go build -o clipm ./cmd/clipm
+git clone https://github.com/simonspoon/limbo.git
+cd limbo
+go build -o limbo ./cmd/limbo
 ```
 
 ## Quick Start
 
 ```bash
-# Initialize clipm in your project
-clipm init
+# Initialize limbo in your project
+limbo init
 
 # Add tasks (--action, --verify, --result are required)
-clipm add "Implement user authentication" \
+limbo add "Implement user authentication" \
   --action "Build JWT login and token refresh" \
   --verify "go test ./... passes" \
   --result "List of endpoints added and test output"
-clipm add "Add login endpoint" --parent <task-id> \
+limbo add "Add login endpoint" --parent <task-id> \
   --action "Implement POST /login handler" \
   --verify "Integration test passes" \
   --result "Handler file path and test results"
 
 # View tasks
-clipm list                    # JSON output
-clipm list --pretty           # Human-readable output
-clipm tree                    # Hierarchical view (pretty by default)
+limbo list                    # JSON output
+limbo list --pretty           # Human-readable output
+limbo tree                    # Hierarchical view (pretty by default)
 
 # Update task status
-clipm status <task-id> in-progress
-clipm status <task-id> done --outcome "Implemented; all tests pass"
+limbo status <task-id> in-progress
+limbo status <task-id> done --outcome "Implemented; all tests pass"
 
 # Get next task (depth-first traversal)
-clipm next
+limbo next
 
 # Watch for changes
-clipm watch --pretty
+limbo watch --pretty
 ```
 
 ## Command Reference
 
 | Command | Description |
 |---------|-------------|
-| `init` | Initialize clipm in the current directory |
+| `init` | Initialize limbo in the current directory |
 | `add <name>` | Add a new task (`--action`, `--verify`, `--result` required; `--parent`, `--description`/`-d`) |
 | `list` | List all tasks |
 | `tree` | Display tasks in a tree structure (`--show-all`) |
@@ -94,46 +94,46 @@ The `next` command supports:
 
 ## Usage with AI Agents
 
-clipm is designed for integration with LLMs and AI agents like Claude Code. The JSON output makes it easy to parse task information programmatically.
+limbo is designed for integration with LLMs and AI agents like Claude Code. The JSON output makes it easy to parse task information programmatically.
 
 Example workflow:
 ```bash
 # Agent checks for next task
-clipm next
+limbo next
 
 # Returns JSON like:
 # {"task": {"id": "abcd", "name": "Implement feature X", ...}}
 
 # Agent claims and starts task
-clipm claim abcd agent-1
-clipm status abcd in-progress
+limbo claim abcd agent-1
+limbo status abcd in-progress
 
 # Agent adds progress notes
-clipm note abcd "Started implementation"
-clipm note abcd "Found edge case, handling it"
+limbo note abcd "Started implementation"
+limbo note abcd "Found edge case, handling it"
 
 # Agent completes work, marks done (--outcome required for structured tasks)
-clipm status abcd done --outcome "Implemented feature X; all tests pass"
+limbo status abcd done --outcome "Implemented feature X; all tests pass"
 ```
 
 ### Multi-Agent Coordination
 
-clipm supports multiple agents working on the same task queue:
+limbo supports multiple agents working on the same task queue:
 
 ```bash
 # Agent claims an unclaimed task
-clipm next --unclaimed
-clipm claim <id> agent-1
+limbo next --unclaimed
+limbo claim <id> agent-1
 
 # Other agents skip claimed tasks
-clipm next --unclaimed  # won't return agent-1's task
+limbo next --unclaimed  # won't return agent-1's task
 
 # Set up task dependencies
-clipm block <prereq-id> <dependent-id>
+limbo block <prereq-id> <dependent-id>
 # dependent task won't appear in `next` until prereq is done
 
 # When prereq completes, dependent is auto-unblocked
-clipm status <prereq-id> done
+limbo status <prereq-id> done
 ```
 
 ### Progressive Decomposition
@@ -151,19 +151,19 @@ The `watch` command monitors tasks.json for changes and outputs updates in real-
 
 ```bash
 # JSON mode (default) - outputs newline-delimited events
-clipm watch
+limbo watch
 
 # Pretty mode - clears screen and redraws hierarchical tree
-clipm watch --pretty
+limbo watch --pretty
 
 # Filter by status
-clipm watch --status in-progress --pretty
+limbo watch --status in-progress --pretty
 
 # Show all tasks including completed
-clipm watch --show-all --pretty
+limbo watch --show-all --pretty
 
 # Custom polling interval
-clipm watch --interval 1s
+limbo watch --interval 1s
 ```
 
 JSON mode outputs events:
@@ -174,7 +174,7 @@ JSON mode outputs events:
 
 ## Storage
 
-Tasks are stored in `.clipm/tasks.json` in your project directory. The storage system walks up directories to find the `.clipm/` folder (similar to how git finds `.git/`).
+Tasks are stored in `.limbo/tasks.json` in your project directory. The storage system walks up directories to find the `.limbo/` folder (similar to how git finds `.git/`).
 
 ## Contributing
 

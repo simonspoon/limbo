@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simonspoon/clipm/internal/models"
+	"github.com/simonspoon/limbo/internal/models"
 	"github.com/stretchr/testify/assert"
 )
 

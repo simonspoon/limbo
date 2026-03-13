@@ -1,18 +1,18 @@
-# Contributing to clipm
+# Contributing to limbo
 
-Thank you for your interest in contributing to clipm!
+Thank you for your interest in contributing to limbo!
 
 ## Development Setup
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/simonspoon/clipm.git
-   cd clipm
+   git clone https://github.com/simonspoon/limbo.git
+   cd limbo
    ```
 
 2. Build the project:
    ```bash
-   go build -o clipm ./cmd/clipm
+   go build -o limbo ./cmd/limbo
    ```
 
 3. Run tests:
@@ -66,8 +66,8 @@ When reporting bugs, please include:
 ## Project Structure
 
 ```
-clipm/
-├── cmd/clipm/          # Entry point
+limbo/
+├── cmd/limbo/          # Entry point
 ├── internal/
 │   ├── commands/       # Cobra command implementations
 │   ├── models/         # Task model and constants

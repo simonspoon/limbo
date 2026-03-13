@@ -16,4 +16,4 @@ This index helps you find the right documentation for your current task. Read on
 |-------|------|-------------|
 | Getting Started | [user/getting-started.md](user/getting-started.md) | First time setup, installation, basic task lifecycle |
 | Commands | [user/commands.md](user/commands.md) | Looking up command flags, constraints, output format, error conditions |
-| Agent Guide | [user/agent-guide.md](user/agent-guide.md) | Integrating clipm with LLMs, multi-agent coordination, progressive decomposition, watch events |
+| Agent Guide | [user/agent-guide.md](user/agent-guide.md) | Integrating limbo with LLMs, multi-agent coordination, progressive decomposition, watch events |

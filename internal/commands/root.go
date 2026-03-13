@@ -8,10 +8,10 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:     "clipm",
+	Use:     "limbo",
 	Version: "0.1.0",
 	Short:   "CLI Project Manager - A lightweight JSON-based task queue for LLMs",
-	Long: `clipm is a CLI-based task manager designed for use by LLMs and agents.
+	Long: `limbo is a CLI-based task manager designed for use by LLMs and agents.
 It uses a single JSON file for storage and outputs JSON by default for easy parsing.`,
 }
 

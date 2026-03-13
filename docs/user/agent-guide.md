@@ -1,13 +1,13 @@
 # Agent Integration Guide
 
-clipm is a CLI task manager built specifically for LLMs and AI agents. This guide covers how to integrate clipm into agent workflows.
+limbo is a CLI task manager built specifically for LLMs and AI agents. This guide covers how to integrate limbo into agent workflows.
 
-## Why clipm for agents
+## Why limbo for agents
 
 - **JSON output by default** -- every command returns machine-parseable JSON, no scraping needed
 - **Depth-first `next` command** -- supports progressive decomposition, letting agents break large tasks into subtasks and work through them systematically
 - **Ownership system** -- multiple agents can coordinate on the same task queue without conflicts
-- **File-based storage** -- a single `.clipm/tasks.json` file, no server or daemon required
+- **File-based storage** -- a single `.limbo/tasks.json` file, no server or daemon required
 
 ## Single-Agent Workflow
 
@@ -15,19 +15,19 @@ A basic agent loop: get the next task, claim it, do the work, mark it done.
 
 ```bash
 # Check for next task
-clipm next
+limbo next
 # Returns: {"task": {"id": "abcd", "name": "Implement feature X", ...}}
 
 # Claim and start
-clipm claim abcd agent-1
-clipm status abcd in-progress
+limbo claim abcd agent-1
+limbo status abcd in-progress
 
 # Log progress
-clipm note abcd "Started implementation"
-clipm note abcd "Found edge case, handling it"
+limbo note abcd "Started implementation"
+limbo note abcd "Found edge case, handling it"
 
 # Complete (--outcome required for structured tasks)
-clipm status abcd done --outcome "Implemented feature X; all tests pass"
+limbo status abcd done --outcome "Implemented feature X; all tests pass"
 ```
 
 The `next` command returns one of two shapes:
@@ -43,14 +43,14 @@ When multiple agents share the same task queue, use ownership and dependencies t
 
 ```bash
 # Agent picks an unclaimed task
-clipm next --unclaimed
-clipm claim <id> agent-1
+limbo next --unclaimed
+limbo claim <id> agent-1
 
 # Other agents skip claimed tasks
-clipm next --unclaimed  # won't return agent-1's task
+limbo next --unclaimed  # won't return agent-1's task
 ```
 
-`clipm claim` fails if the task is already owned by another agent. Use `--force` to override ownership if needed.
+`limbo claim` fails if the task is already owned by another agent. Use `--force` to override ownership if needed.
 
 ### Dependencies
 
@@ -58,13 +58,13 @@ Dependencies prevent agents from starting work before prerequisites are complete
 
 ```bash
 # Mark task B as blocked by task A
-clipm block <prereq-id> <dependent-id>
+limbo block <prereq-id> <dependent-id>
 
 # The dependent task won't appear in `next` until the prereq is done
-clipm next  # skips blocked tasks
+limbo next  # skips blocked tasks
 
 # When the prereq is marked done, it's auto-removed from all BlockedBy lists
-clipm status <prereq-id> done
+limbo status <prereq-id> done
 ```
 
 ### Filtering
@@ -72,11 +72,11 @@ clipm status <prereq-id> done
 Use `list` flags to inspect the task queue:
 
 ```bash
-clipm list --owner agent-1       # tasks owned by agent-1
-clipm list --unclaimed            # tasks with no owner
-clipm list --status in-progress   # tasks currently being worked on
-clipm list --blocked              # tasks waiting on dependencies
-clipm list --unblocked            # tasks ready to start
+limbo list --owner agent-1       # tasks owned by agent-1
+limbo list --unclaimed            # tasks with no owner
+limbo list --status in-progress   # tasks currently being worked on
+limbo list --blocked              # tasks waiting on dependencies
+limbo list --unblocked            # tasks ready to start
 ```
 
 ## Progressive Decomposition
@@ -92,27 +92,27 @@ This means agents can break down large tasks on the fly:
 
 ```bash
 # Agent gets a broad task
-clipm next
+limbo next
 # {"task": {"id": "abcd", "name": "Build authentication system"}}
 
 # Agent decomposes it into subtasks
-clipm claim abcd agent-1
-clipm status abcd in-progress
-clipm add "Design auth schema" --parent abcd \
+limbo claim abcd agent-1
+limbo status abcd in-progress
+limbo add "Design auth schema" --parent abcd \
   --action "Design the database schema for auth" \
   --verify "Schema reviewed and approved" \
   --result "Schema file path and summary of design decisions"
-clipm add "Implement login endpoint" --parent abcd \
+limbo add "Implement login endpoint" --parent abcd \
   --action "Implement POST /login in auth package" \
   --verify "go test ./internal/auth/... passes" \
   --result "Handler file path and passing test output"
-clipm add "Implement logout endpoint" --parent abcd \
+limbo add "Implement logout endpoint" --parent abcd \
   --action "Implement POST /logout in auth package" \
   --verify "go test ./internal/auth/... passes" \
   --result "Handler file path and passing test output"
 
 # Next call now returns the first subtask
-clipm next
+limbo next
 # {"task": {"id": "efgh", "name": "Design auth schema"}}
 ```
 
@@ -120,14 +120,14 @@ A task cannot be marked `done` if it has undone children, so agents must complet
 
 ## Watch Mode for Orchestrators
 
-The `watch` command monitors `.clipm/tasks.json` for changes and outputs updates in real-time. This is useful for orchestrator processes that coordinate multiple agents.
+The `watch` command monitors `.limbo/tasks.json` for changes and outputs updates in real-time. This is useful for orchestrator processes that coordinate multiple agents.
 
 ### JSON mode (default)
 
 Outputs newline-delimited JSON events:
 
 ```bash
-clipm watch
+limbo watch
 ```
 
 Event types:
@@ -155,7 +155,7 @@ Example events:
 Clears the screen and renders a hierarchical tree view that auto-refreshes:
 
 ```bash
-clipm watch --pretty
+limbo watch --pretty
 ```
 
 Press `q` or `Ctrl+C` to exit.
@@ -164,13 +164,13 @@ Press `q` or `Ctrl+C` to exit.
 
 ```bash
 # Filter events to a specific status
-clipm watch --status in-progress
+limbo watch --status in-progress
 
 # Custom polling interval (default 500ms)
-clipm watch --interval 1s
+limbo watch --interval 1s
 
 # Show all tasks including completed
-clipm watch --show-all
+limbo watch --show-all
 ```
 
 ## Key Constraints
@@ -179,6 +179,6 @@ clipm watch --show-all
 - Tasks cannot be set to `in-progress` if they are blocked by incomplete dependencies
 - Children cannot be added to `done` tasks
 - Deleting a task orphans its children (sets their parent to nil)
-- `clipm prune` removes all `done` tasks
+- `limbo prune` removes all `done` tasks
 - Notes are append-only
 - Structured tasks (those created with `--action`, `--verify`, `--result`) require `--outcome` when marking `done`

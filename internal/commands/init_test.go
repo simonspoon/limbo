@@ -5,14 +5,14 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/simonspoon/clipm/internal/storage"
+	"github.com/simonspoon/limbo/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestInitCommand(t *testing.T) {
 	// Create temp directory without initializing
-	tmpDir, err := os.MkdirTemp("", "clipm-init-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-init-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -28,21 +28,21 @@ func TestInitCommand(t *testing.T) {
 	err = runInit(nil, nil)
 	require.NoError(t, err)
 
-	// Verify .clipm directory was created
-	clipmPath := filepath.Join(tmpDir, storage.ClipmDir)
-	info, err := os.Stat(clipmPath)
+	// Verify .limbo directory was created
+	limboPath := filepath.Join(tmpDir, storage.LimboDir)
+	info, err := os.Stat(limboPath)
 	require.NoError(t, err)
 	assert.True(t, info.IsDir())
 
 	// Verify tasks.json was created
-	tasksPath := filepath.Join(clipmPath, storage.TasksFile)
+	tasksPath := filepath.Join(limboPath, storage.TasksFile)
 	_, err = os.Stat(tasksPath)
 	require.NoError(t, err)
 }
 
 func TestInitCommandAlreadyExists(t *testing.T) {
 	// Create temp directory and initialize it
-	tmpDir, err := os.MkdirTemp("", "clipm-init-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-init-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -66,7 +66,7 @@ func TestInitCommandAlreadyExists(t *testing.T) {
 
 func TestInitCommandPrettyOutput(t *testing.T) {
 	// Create temp directory without initializing
-	tmpDir, err := os.MkdirTemp("", "clipm-init-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-init-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -82,9 +82,9 @@ func TestInitCommandPrettyOutput(t *testing.T) {
 	err = runInit(nil, nil)
 	require.NoError(t, err)
 
-	// Verify .clipm directory was created
-	clipmPath := filepath.Join(tmpDir, storage.ClipmDir)
-	info, err := os.Stat(clipmPath)
+	// Verify .limbo directory was created
+	limboPath := filepath.Join(tmpDir, storage.LimboDir)
+	info, err := os.Stat(limboPath)
 	require.NoError(t, err)
 	assert.True(t, info.IsDir())
 }

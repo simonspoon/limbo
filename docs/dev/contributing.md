@@ -1,20 +1,20 @@
 # Contributing
 
-This guide covers what you need to know to add or modify code in clipm.
+This guide covers what you need to know to add or modify code in limbo.
 
 ## Dev Setup
 
 Clone the repository and enter the project directory:
 
 ```bash
-git clone https://github.com/simonspoon/clipm.git
-cd clipm
+git clone https://github.com/simonspoon/limbo.git
+cd limbo
 ```
 
 Build the binary:
 
 ```bash
-go build -o clipm ./cmd/clipm
+go build -o limbo ./cmd/limbo
 ```
 
 Run all tests:
@@ -47,8 +47,8 @@ golangci-lint run
 ## Package Structure
 
 ```
-clipm/
-├── cmd/clipm/main.go         # Entry point, calls commands.Execute()
+limbo/
+├── cmd/limbo/main.go         # Entry point, calls commands.Execute()
 ├── internal/
 │   ├── commands/             # Cobra command implementations (one file per command)
 │   ├── models/               # Task model and status constants
@@ -67,7 +67,7 @@ Define package-level flag variables, the cobra command, and the run function:
 package commands
 
 import (
-    "github.com/simonspoon/clipm/internal/storage"
+    "github.com/simonspoon/limbo/internal/storage"
     "github.com/spf13/cobra"
 )
 
@@ -124,7 +124,7 @@ package commands
 import (
     "testing"
 
-    "github.com/simonspoon/clipm/internal/storage"
+    "github.com/simonspoon/limbo/internal/storage"
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
 )
@@ -153,7 +153,7 @@ func TestNewCommand(t *testing.T) {
 - Use `storage.NewStorageAt(dir)` with a temp directory — never use `storage.NewStorage()` directly in tests.
 - Call `store.Init()` to initialize the storage before use.
 - Test files live in the same package as the code they test and follow the `*_test.go` naming pattern.
-- Use the shared `setupTestEnv(t)` helper defined in `add_test.go` for command tests. It creates a temp directory, changes into it, and initializes a clipm store.
+- Use the shared `setupTestEnv(t)` helper defined in `add_test.go` for command tests. It creates a temp directory, changes into it, and initializes a limbo store.
 - Reset all package-level flag variables to their defaults at the start of each test case.
 
 Example using `setupTestEnv`:
@@ -194,7 +194,7 @@ Before opening a pull request:
 
 ## Source References
 
-- Entry point: `cmd/clipm/main.go`
+- Entry point: `cmd/limbo/main.go`
 - Command pattern: `internal/commands/add.go` and `internal/commands/add_test.go`
 - Command registration: `internal/commands/root.go`
 - Task model: `internal/models/`

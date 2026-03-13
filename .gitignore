@@ -17,7 +17,7 @@ go.work
 # Build output
 /dist/
 /bin/
-/clipm
+/limbo
 
 # IDE
 .vscode/
@@ -30,8 +30,8 @@ go.work
 .DS_Store
 Thumbs.db
 
-# clipm directories (for testing)
-.clipm/
+# limbo directories (for testing)
+.limbo/
 
 # Claude Code (kept for contributors)
 # CLAUDE.md

@@ -6,8 +6,8 @@ import (
 	"sort"
 
 	"github.com/fatih/color"
-	"github.com/simonspoon/clipm/internal/models"
-	"github.com/simonspoon/clipm/internal/storage"
+	"github.com/simonspoon/limbo/internal/models"
+	"github.com/simonspoon/limbo/internal/storage"
 	"github.com/spf13/cobra"
 )
 

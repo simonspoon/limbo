@@ -3,13 +3,13 @@
 ## Package Layout
 
 ```
-cmd/clipm/main.go              Entry point
+cmd/limbo/main.go              Entry point
 internal/commands/             Cobra command implementations (one file per command)
 internal/models/               Task and Note structs, status constants
 internal/storage/              JSON file storage and all business logic
 ```
 
-### cmd/clipm/main.go
+### cmd/limbo/main.go
 
 The entry point is minimal. It delegates entirely to the commands package:
 
@@ -75,11 +75,11 @@ All business logic lives here. Commands do not manipulate task slices directly; 
 
 ### File Location
 
-Tasks are stored at `<project-root>/.clipm/tasks.json`. The constants are:
+Tasks are stored at `<project-root>/.limbo/tasks.json`. The constants are:
 
 ```go
 const (
-    ClipmDir  = ".clipm"
+    LimboDir  = ".limbo"
     TasksFile = "tasks.json"
 )
 ```
@@ -103,19 +103,19 @@ type Storage struct {
 }
 ```
 
-`rootDir` is the absolute path to the directory containing `.clipm/`. It is set during construction and never changes.
+`rootDir` is the absolute path to the directory containing `.limbo/`. It is set during construction and never changes.
 
 ### Directory Discovery
 
-`NewStorage()` calls `findProjectRoot()`, which walks up the directory tree from the current working directory until it finds a directory containing `.clipm/`, mirroring how git finds `.git/` (see `storage.go:54-72`):
+`NewStorage()` calls `findProjectRoot()`, which walks up the directory tree from the current working directory until it finds a directory containing `.limbo/`, mirroring how git finds `.git/` (see `storage.go:54-72`):
 
 ```go
 func findProjectRoot() (string, error) {
     dir, err := os.Getwd()
     // ...
     for {
-        clipmPath := filepath.Join(dir, ClipmDir)
-        if info, err := os.Stat(clipmPath); err == nil && info.IsDir() {
+        limboPath := filepath.Join(dir, LimboDir)
+        if info, err := os.Stat(limboPath); err == nil && info.IsDir() {
             return dir, nil
         }
         parent := filepath.Dir(dir)
@@ -220,9 +220,9 @@ When `getDeepestInProgress` returns nil (no in-progress tasks exist), `getRootTo
 A typical command execution follows this path:
 
 1. Cobra dispatches to the command's `RunE` function.
-2. The command calls `storage.NewStorage()`, which auto-discovers the `.clipm/` directory by walking up from `os.Getwd()`.
+2. The command calls `storage.NewStorage()`, which auto-discovers the `.limbo/` directory by walking up from `os.Getwd()`.
 3. The command calls one or more storage methods (`LoadAll`, `LoadTask`, `SaveTask`, etc.).
-4. Each storage method calls the unexported `loadStore`, which reads and JSON-unmarshals `tasks.json` from `<rootDir>/.clipm/tasks.json`.
+4. Each storage method calls the unexported `loadStore`, which reads and JSON-unmarshals `tasks.json` from `<rootDir>/.limbo/tasks.json`.
 5. The method operates on the in-memory `TaskStore`, then calls `saveStore` to write the updated JSON back to disk.
 6. The command marshals its result to JSON and prints to stdout (or uses `--pretty` for human-readable output).
 

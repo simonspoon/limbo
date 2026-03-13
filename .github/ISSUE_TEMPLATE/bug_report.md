@@ -12,7 +12,7 @@ A clear description of the bug.
 
 ## Steps to Reproduce
 
-1. Run `clipm ...`
+1. Run `limbo ...`
 2. ...
 3. See error
 
@@ -28,7 +28,7 @@ What actually happened.
 
 - OS: [e.g., macOS 14.0, Ubuntu 22.04]
 - Go version: [e.g., 1.23.0]
-- clipm version: [e.g., v1.0.0]
+- limbo version: [e.g., v1.0.0]
 
 ## Additional Context
 

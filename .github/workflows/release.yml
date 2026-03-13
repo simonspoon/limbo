@@ -30,22 +30,22 @@ jobs:
           mkdir -p dist
 
           # Linux amd64
-          GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o dist/clipm-linux-amd64 ./cmd/clipm
+          GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o dist/limbo-linux-amd64 ./cmd/limbo
 
           # Linux arm64
-          GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o dist/clipm-linux-arm64 ./cmd/clipm
+          GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o dist/limbo-linux-arm64 ./cmd/limbo
 
           # Darwin amd64
-          GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o dist/clipm-darwin-amd64 ./cmd/clipm
+          GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o dist/limbo-darwin-amd64 ./cmd/limbo
 
           # Darwin arm64
-          GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o dist/clipm-darwin-arm64 ./cmd/clipm
+          GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o dist/limbo-darwin-arm64 ./cmd/limbo
 
           # Windows amd64
-          GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o dist/clipm-windows-amd64.exe ./cmd/clipm
+          GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o dist/limbo-windows-amd64.exe ./cmd/limbo
 
           # Windows arm64
-          GOOS=windows GOARCH=arm64 go build -ldflags="-s -w" -o dist/clipm-windows-arm64.exe ./cmd/clipm
+          GOOS=windows GOARCH=arm64 go build -ldflags="-s -w" -o dist/limbo-windows-arm64.exe ./cmd/limbo
 
       - name: Create checksums
         run: |
@@ -56,11 +56,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/clipm-linux-amd64
-            dist/clipm-linux-arm64
-            dist/clipm-darwin-amd64
-            dist/clipm-darwin-arm64
-            dist/clipm-windows-amd64.exe
-            dist/clipm-windows-arm64.exe
+            dist/limbo-linux-amd64
+            dist/limbo-linux-arm64
+            dist/limbo-darwin-amd64
+            dist/limbo-darwin-arm64
+            dist/limbo-windows-amd64.exe
+            dist/limbo-windows-arm64.exe
             dist/checksums.txt
           generate_release_notes: true

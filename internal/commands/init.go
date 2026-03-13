@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/fatih/color"
-	"github.com/simonspoon/clipm/internal/storage"
+	"github.com/simonspoon/limbo/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -14,8 +14,8 @@ var initPretty bool
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Initialize a new clipm project",
-	Long:  `Initialize a new clipm project by creating the .clipm directory structure.`,
+	Short: "Initialize a new limbo project",
+	Long:  `Initialize a new limbo project by creating the .limbo directory structure.`,
 	RunE:  runInit,
 }
 
@@ -50,7 +50,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 
 	if initPretty {
 		green := color.New(color.FgGreen)
-		green.Printf("Initialized clipm in %s\n", cwd)
+		green.Printf("Initialized limbo in %s\n", cwd)
 	} else {
 		out, _ := json.Marshal(result)
 		fmt.Println(string(out))

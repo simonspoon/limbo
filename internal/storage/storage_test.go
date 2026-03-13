@@ -6,14 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simonspoon/clipm/internal/models"
+	"github.com/simonspoon/limbo/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestInit(t *testing.T) {
 	// Create temp directory
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -23,14 +23,14 @@ func TestInit(t *testing.T) {
 	err = store.Init()
 	require.NoError(t, err)
 
-	// Verify .clipm directory exists
-	clipmPath := filepath.Join(tmpDir, ClipmDir)
-	info, err := os.Stat(clipmPath)
+	// Verify .limbo directory exists
+	limboPath := filepath.Join(tmpDir, LimboDir)
+	info, err := os.Stat(limboPath)
 	require.NoError(t, err)
 	assert.True(t, info.IsDir())
 
 	// Verify tasks.json exists
-	tasksPath := filepath.Join(clipmPath, TasksFile)
+	tasksPath := filepath.Join(limboPath, TasksFile)
 	_, err = os.Stat(tasksPath)
 	require.NoError(t, err)
 
@@ -41,7 +41,7 @@ func TestInit(t *testing.T) {
 
 func TestSaveAndLoadTask(t *testing.T) {
 	// Create temp directory
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -76,7 +76,7 @@ func TestSaveAndLoadTask(t *testing.T) {
 
 func TestLoadAll(t *testing.T) {
 	// Create temp directory
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -105,7 +105,7 @@ func TestLoadAll(t *testing.T) {
 
 func TestDeleteTask(t *testing.T) {
 	// Create temp directory
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -134,7 +134,7 @@ func TestDeleteTask(t *testing.T) {
 
 func TestDeleteTasks(t *testing.T) {
 	// Create temp directory
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -168,7 +168,7 @@ func TestDeleteTasks(t *testing.T) {
 
 func TestTaskWithParent(t *testing.T) {
 	// Create temp directory
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -207,7 +207,7 @@ func TestTaskWithParent(t *testing.T) {
 
 func TestGetChildren(t *testing.T) {
 	// Create temp directory
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -248,7 +248,7 @@ func TestGetChildren(t *testing.T) {
 
 func TestGetNextTask(t *testing.T) {
 	// Create temp directory
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -308,7 +308,7 @@ func TestGetNextTask_DepthFirst(t *testing.T) {
 	// - A1 has children A1a (done), A1b (todo), A1c (todo)
 	// Expected: next should return A1b (sibling of deepest in-progress)
 
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -413,7 +413,7 @@ func TestGetNextTask_DepthFirst(t *testing.T) {
 
 func TestGetNextTask_InProgressRootNoTodos(t *testing.T) {
 	// Edge case: in-progress root task with no todo children or siblings
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -441,7 +441,7 @@ func TestGetNextTask_InProgressRootNoTodos(t *testing.T) {
 
 func TestGetNextTask_WalksUpToRoot(t *testing.T) {
 	// Test that we walk up and find root-level siblings
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -492,7 +492,7 @@ func TestGetNextTask_WalksUpToRoot(t *testing.T) {
 
 func TestHasUndoneChildren(t *testing.T) {
 	// Create temp directory
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -543,7 +543,7 @@ func TestHasUndoneChildren(t *testing.T) {
 }
 
 func TestHasUndoneChildrenRecursive(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -593,7 +593,7 @@ func TestHasUndoneChildrenRecursive(t *testing.T) {
 }
 
 func TestOrphanChildren(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -664,8 +664,8 @@ func TestGetRootDir(t *testing.T) {
 }
 
 func TestNewStorage(t *testing.T) {
-	// Create temp directory with .clipm initialized
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	// Create temp directory with .limbo initialized
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -689,8 +689,8 @@ func TestNewStorage(t *testing.T) {
 }
 
 func TestNewStorageNotInProject(t *testing.T) {
-	// Create temp directory without .clipm
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	// Create temp directory without .limbo
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -706,8 +706,8 @@ func TestNewStorageNotInProject(t *testing.T) {
 }
 
 func TestFindProjectRootInParent(t *testing.T) {
-	// Create temp directory structure: parent/.clipm and parent/child
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	// Create temp directory structure: parent/.limbo and parent/child
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -715,7 +715,7 @@ func TestFindProjectRootInParent(t *testing.T) {
 	tmpDir, err = filepath.EvalSymlinks(tmpDir)
 	require.NoError(t, err)
 
-	// Initialize .clipm in parent
+	// Initialize .limbo in parent
 	store := NewStorageAt(tmpDir)
 	require.NoError(t, store.Init())
 
@@ -736,7 +736,7 @@ func TestFindProjectRootInParent(t *testing.T) {
 }
 
 func TestLoadStoreCorruptedJSON(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -744,7 +744,7 @@ func TestLoadStoreCorruptedJSON(t *testing.T) {
 	require.NoError(t, store.Init())
 
 	// Corrupt the tasks.json file
-	tasksPath := filepath.Join(tmpDir, ClipmDir, TasksFile)
+	tasksPath := filepath.Join(tmpDir, LimboDir, TasksFile)
 	err = os.WriteFile(tasksPath, []byte("not valid json{"), 0644)
 	require.NoError(t, err)
 
@@ -755,7 +755,7 @@ func TestLoadStoreCorruptedJSON(t *testing.T) {
 }
 
 func TestDeleteTaskNotFound(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -768,7 +768,7 @@ func TestDeleteTaskNotFound(t *testing.T) {
 }
 
 func TestDeleteTaskWithMultipleTasks(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -800,7 +800,7 @@ func TestDeleteTaskWithMultipleTasks(t *testing.T) {
 }
 
 func TestLoadTaskNotFound(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -813,7 +813,7 @@ func TestLoadTaskNotFound(t *testing.T) {
 }
 
 func TestGetChildrenEmpty(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -827,16 +827,16 @@ func TestGetChildrenEmpty(t *testing.T) {
 }
 
 func TestMigrateFromV3(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
-	// Create .clipm directory manually with a v3 store
-	clipmPath := filepath.Join(tmpDir, ClipmDir)
-	require.NoError(t, os.Mkdir(clipmPath, 0755))
+	// Create .limbo directory manually with a v3 store
+	limboPath := filepath.Join(tmpDir, LimboDir)
+	require.NoError(t, os.Mkdir(limboPath, 0755))
 
 	v3Data := []byte(`{"version":"3.0.0","tasks":[{"id":"aaaa","name":"Legacy Task","parent":null,"status":"todo","created":"2026-01-01T00:00:00Z","updated":"2026-01-01T00:00:00Z"}]}`)
-	tasksPath := filepath.Join(clipmPath, TasksFile)
+	tasksPath := filepath.Join(limboPath, TasksFile)
 	require.NoError(t, os.WriteFile(tasksPath, v3Data, 0644))
 
 	store := NewStorageAt(tmpDir)
@@ -862,7 +862,7 @@ func TestMigrateFromV3(t *testing.T) {
 }
 
 func TestGenerateTaskID(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -878,7 +878,7 @@ func TestGenerateTaskID(t *testing.T) {
 }
 
 func TestGenerateTaskID_Collision(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "clipm-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 

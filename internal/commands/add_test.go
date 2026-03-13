@@ -5,15 +5,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simonspoon/clipm/internal/models"
-	"github.com/simonspoon/clipm/internal/storage"
+	"github.com/simonspoon/limbo/internal/models"
+	"github.com/simonspoon/limbo/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func setupTestEnv(t *testing.T) (string, func()) {
 	// Create temp directory
-	tmpDir, err := os.MkdirTemp("", "clipm-cmd-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-cmd-test-*")
 	require.NoError(t, err)
 
 	// Change to temp directory
@@ -21,7 +21,7 @@ func setupTestEnv(t *testing.T) (string, func()) {
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(tmpDir))
 
-	// Initialize clipm
+	// Initialize limbo
 	store := storage.NewStorageAt(tmpDir)
 	require.NoError(t, store.Init())
 
@@ -162,7 +162,7 @@ func TestAddCommandNonExistentParent(t *testing.T) {
 
 func TestAddCommandNotInProject(t *testing.T) {
 	// Create temp directory without initializing
-	tmpDir, err := os.MkdirTemp("", "clipm-cmd-test-*")
+	tmpDir, err := os.MkdirTemp("", "limbo-cmd-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
