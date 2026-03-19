@@ -1,0 +1,36 @@
+name: bug-fix
+description: Investigate and fix a bug systematically
+tasks:
+  - name: "Investigate"
+    action: "Reproduce and identify root cause"
+    verify: "Root cause documented"
+    result: "Findings report"
+    children:
+      - name: "Reproduce issue"
+        action: "Create reproduction steps"
+        verify: "Bug reproduced consistently"
+        result: "Reproduction steps documented"
+      - name: "Identify root cause"
+        action: "Trace the bug to source"
+        verify: "Root cause identified and documented"
+        result: "Root cause explanation"
+        blocked_by: ["Reproduce issue"]
+  - name: "Fix"
+    action: "Implement the fix"
+    verify: "Fix resolves the issue"
+    result: "Changed files and approach"
+    blocked_by: ["Investigate"]
+  - name: "Test"
+    action: "Write and run tests"
+    verify: "All tests pass"
+    result: "Test results"
+    blocked_by: ["Fix"]
+    children:
+      - name: "Verify fix"
+        action: "Confirm original issue is resolved"
+        verify: "Issue no longer reproduces"
+        result: "Verification results"
+      - name: "Regression tests"
+        action: "Ensure no regressions"
+        verify: "Full test suite passes"
+        result: "Test suite results"

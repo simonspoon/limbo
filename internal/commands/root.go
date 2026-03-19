@@ -43,4 +43,5 @@ func init() {
 	rootCmd.AddCommand(claimCmd)
 	rootCmd.AddCommand(unclaimCmd)
 	rootCmd.AddCommand(editCmd)
+	rootCmd.AddCommand(templateCmd)
 }
