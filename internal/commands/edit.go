@@ -93,9 +93,31 @@ func runEdit(cmd *cobra.Command, args []string) error {
 	}
 
 	if editPretty {
+		// Load blocker info for complete pretty output
+		allTasks, loadErr := store.LoadAll()
+		var blockers, blocks []blockerInfo
+		if loadErr == nil {
+			for _, blockerID := range task.BlockedBy {
+				if info := findBlockerInfo(allTasks, blockerID); info != nil {
+					blockers = append(blockers, *info)
+				}
+			}
+			for i := range allTasks {
+				for _, depID := range allTasks[i].BlockedBy {
+					if depID == id {
+						blocks = append(blocks, blockerInfo{
+							ID:     allTasks[i].ID,
+							Name:   allTasks[i].Name,
+							Status: allTasks[i].Status,
+						})
+						break
+					}
+				}
+			}
+		}
 		green := color.New(color.FgGreen)
 		green.Printf("Task %s updated\n", id)
-		printTaskDetails(task, nil, nil)
+		printTaskDetails(task, blockers, blocks)
 	} else {
 		out, _ := json.Marshal(struct {
 			ID      string `json:"id"`
