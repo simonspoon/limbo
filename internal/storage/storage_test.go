@@ -861,6 +861,165 @@ func TestMigrateFromV3(t *testing.T) {
 	assert.Contains(t, string(data), `"version": "4.0.0"`)
 }
 
+func TestIsBlocked(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	now := time.Now()
+
+	// Create blocker task (todo)
+	blocker := &models.Task{
+		ID:      "aaaa",
+		Name:    "Blocker",
+		Status:  models.StatusTodo,
+		Created: now,
+		Updated: now,
+	}
+	require.NoError(t, store.SaveTask(blocker))
+
+	// Create blocked task
+	blocked := &models.Task{
+		ID:        "aaab",
+		Name:      "Blocked",
+		Status:    models.StatusTodo,
+		BlockedBy: []string{"aaaa"},
+		Created:   now,
+		Updated:   now,
+	}
+	require.NoError(t, store.SaveTask(blocked))
+
+	// Should be blocked (blocker is todo)
+	isBlocked, err := store.IsBlocked(blocked)
+	require.NoError(t, err)
+	assert.True(t, isBlocked)
+
+	// Mark blocker as done
+	blocker.Status = models.StatusDone
+	require.NoError(t, store.SaveTask(blocker))
+
+	// Should no longer be blocked
+	isBlocked, err = store.IsBlocked(blocked)
+	require.NoError(t, err)
+	assert.False(t, isBlocked)
+
+	// Task with no blockers is not blocked
+	noDeps := &models.Task{
+		ID:      "aaac",
+		Name:    "No deps",
+		Status:  models.StatusTodo,
+		Created: now,
+		Updated: now,
+	}
+	isBlocked, err = store.IsBlocked(noDeps)
+	require.NoError(t, err)
+	assert.False(t, isBlocked)
+
+	// Task blocked by nonexistent task is not blocked (blocker gone = unblocked)
+	ghostBlocked := &models.Task{
+		ID:        "aaad",
+		Name:      "Ghost blocked",
+		Status:    models.StatusTodo,
+		BlockedBy: []string{"zzzz"},
+		Created:   now,
+		Updated:   now,
+	}
+	isBlocked, err = store.IsBlocked(ghostBlocked)
+	require.NoError(t, err)
+	assert.False(t, isBlocked)
+}
+
+func TestWouldCreateCycle(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	now := time.Now()
+
+	// A blocks B, B blocks C
+	a := &models.Task{ID: "aaaa", Name: "A", Status: models.StatusTodo, Created: now, Updated: now}
+	b := &models.Task{ID: "aaab", Name: "B", Status: models.StatusTodo, BlockedBy: []string{"aaaa"}, Created: now, Updated: now}
+	c := &models.Task{ID: "aaac", Name: "C", Status: models.StatusTodo, BlockedBy: []string{"aaab"}, Created: now, Updated: now}
+
+	require.NoError(t, store.SaveTask(a))
+	require.NoError(t, store.SaveTask(b))
+	require.NoError(t, store.SaveTask(c))
+
+	// Adding C blocks A would create cycle: A→B→C→A
+	wouldCycle, err := store.WouldCreateCycle("aaac", "aaaa")
+	require.NoError(t, err)
+	assert.True(t, wouldCycle)
+
+	// Adding A blocks C is the existing direction — no cycle from adding D blocks A
+	d := &models.Task{ID: "aaad", Name: "D", Status: models.StatusTodo, Created: now, Updated: now}
+	require.NoError(t, store.SaveTask(d))
+
+	wouldCycle, err = store.WouldCreateCycle("aaad", "aaaa")
+	require.NoError(t, err)
+	assert.False(t, wouldCycle)
+
+	// Self-cycle: A blocks A
+	wouldCycle, err = store.WouldCreateCycle("aaaa", "aaaa")
+	require.NoError(t, err)
+	assert.False(t, wouldCycle) // BFS from A doesn't find A in A's BlockedBy (A has no blockers)
+
+	// Direct cycle: if B blocks A (A already blocks B)
+	wouldCycle, err = store.WouldCreateCycle("aaab", "aaaa")
+	require.NoError(t, err)
+	assert.True(t, wouldCycle)
+}
+
+func TestRemoveFromAllBlockedBy(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	now := time.Now()
+
+	// A blocks B and C
+	a := &models.Task{ID: "aaaa", Name: "A", Status: models.StatusDone, Created: now, Updated: now}
+	b := &models.Task{ID: "aaab", Name: "B", Status: models.StatusTodo, BlockedBy: []string{"aaaa", "aaac"}, Created: now, Updated: now}
+	c := &models.Task{ID: "aaac", Name: "C", Status: models.StatusTodo, BlockedBy: []string{"aaaa"}, Created: now, Updated: now}
+	d := &models.Task{ID: "aaad", Name: "D", Status: models.StatusTodo, Created: now, Updated: now}
+
+	require.NoError(t, store.SaveTask(a))
+	require.NoError(t, store.SaveTask(b))
+	require.NoError(t, store.SaveTask(c))
+	require.NoError(t, store.SaveTask(d))
+
+	// Remove A from all BlockedBy lists
+	err = store.RemoveFromAllBlockedBy("aaaa")
+	require.NoError(t, err)
+
+	// B should still be blocked by C but not A
+	loadedB, err := store.LoadTask("aaab")
+	require.NoError(t, err)
+	assert.Equal(t, []string{"aaac"}, loadedB.BlockedBy)
+
+	// C should have empty BlockedBy
+	loadedC, err := store.LoadTask("aaac")
+	require.NoError(t, err)
+	assert.Empty(t, loadedC.BlockedBy)
+
+	// D should be unchanged (was never blocked)
+	loadedD, err := store.LoadTask("aaad")
+	require.NoError(t, err)
+	assert.Empty(t, loadedD.BlockedBy)
+
+	// Removing a task that blocks nothing should be a no-op
+	err = store.RemoveFromAllBlockedBy("zzzz")
+	require.NoError(t, err)
+}
+
 func TestGenerateTaskID(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
 	require.NoError(t, err)
