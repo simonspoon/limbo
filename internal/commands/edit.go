@@ -1,0 +1,108 @@
+package commands
+
+import (
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"github.com/fatih/color"
+	"github.com/simonspoon/limbo/internal/models"
+	"github.com/simonspoon/limbo/internal/storage"
+	"github.com/spf13/cobra"
+)
+
+var (
+	editName        string
+	editDescription string
+	editAction      string
+	editVerify      string
+	editResult      string
+	editPretty      bool
+)
+
+var editCmd = &cobra.Command{
+	Use:   "edit <id>",
+	Short: "Edit a task's fields",
+	Long:  `Modify an existing task's mutable fields. Only specified flags are updated.`,
+	Args:  cobra.ExactArgs(1),
+	RunE:  runEdit,
+}
+
+func init() {
+	editCmd.Flags().StringVar(&editName, "name", "", "Task name")
+	editCmd.Flags().StringVarP(&editDescription, "description", "d", "", "Task description")
+	editCmd.Flags().StringVar(&editAction, "action", "", "What concrete work to perform")
+	editCmd.Flags().StringVar(&editVerify, "verify", "", "How to confirm the action succeeded")
+	editCmd.Flags().StringVar(&editResult, "result", "", "Template for what to report back")
+	editCmd.Flags().BoolVar(&editPretty, "pretty", false, "Pretty print output")
+}
+
+// applyEditFlags applies changed flags to the task. Returns true if any field was changed.
+func applyEditFlags(cmd *cobra.Command, task *models.Task) bool {
+	changed := false
+	if cmd.Flags().Changed("name") {
+		task.Name = editName
+		changed = true
+	}
+	if cmd.Flags().Changed("description") {
+		task.Description = editDescription
+		changed = true
+	}
+	if cmd.Flags().Changed("action") {
+		task.Action = editAction
+		changed = true
+	}
+	if cmd.Flags().Changed("verify") {
+		task.Verify = editVerify
+		changed = true
+	}
+	if cmd.Flags().Changed("result") {
+		task.Result = editResult
+		changed = true
+	}
+	return changed
+}
+
+func runEdit(cmd *cobra.Command, args []string) error {
+	id := models.NormalizeTaskID(args[0])
+	if !models.IsValidTaskID(id) {
+		return fmt.Errorf("invalid task ID: %s", args[0])
+	}
+
+	store, err := storage.NewStorage()
+	if err != nil {
+		return err
+	}
+
+	task, err := store.LoadTask(id)
+	if err != nil {
+		if err == storage.ErrTaskNotFound {
+			return fmt.Errorf("task %s not found", id)
+		}
+		return err
+	}
+
+	if !applyEditFlags(cmd, task) {
+		return fmt.Errorf("nothing to edit: specify at least one flag (--name, --description, --action, --verify, --result)")
+	}
+
+	task.Updated = time.Now()
+
+	if err := store.SaveTask(task); err != nil {
+		return err
+	}
+
+	if editPretty {
+		green := color.New(color.FgGreen)
+		green.Printf("Task %s updated\n", id)
+		printTaskDetails(task, nil, nil)
+	} else {
+		out, _ := json.Marshal(struct {
+			ID      string `json:"id"`
+			Updated string `json:"updated"`
+		}{task.ID, task.Updated.Format(time.RFC3339Nano)})
+		fmt.Println(string(out))
+	}
+
+	return nil
+}

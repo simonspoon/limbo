@@ -75,6 +75,42 @@ abcd
 
 ---
 
+### `limbo edit <id>`
+
+Modify an existing task's mutable fields. Only specified flags are updated (partial update).
+
+**Usage**
+
+```
+limbo edit <id> [flags]
+```
+
+**Flags**
+
+| Flag | Short | Default | Description |
+|------|-------|---------|-------------|
+| `--name` | | `""` | Task name |
+| `--description` | `-d` | `""` | Task description |
+| `--action` | | `""` | What concrete work to perform |
+| `--verify` | | `""` | How to confirm the action succeeded |
+| `--result` | | `""` | Template for what to report back |
+| `--pretty` | | `false` | Human-readable output showing the updated task |
+
+**Output (JSON)**
+
+```json
+{"id": "abcd", "updated": "2024-01-15T10:30:00.000000-04:00"}
+```
+
+**Constraints and errors**
+
+- At least one editable flag must be specified (error if no flags provided).
+- Task must exist.
+- Fields not specified in flags are left unchanged.
+- Non-editable fields (status, parent, blockedBy, owner, notes, created) are preserved. Use dedicated commands (`status`, `parent`/`unparent`, `block`/`unblock`, `claim`/`unclaim`, `note`) for those.
+
+---
+
 ### `limbo status <id> <status>`
 
 Update the status of a task.

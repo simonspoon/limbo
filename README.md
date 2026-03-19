@@ -56,6 +56,7 @@ limbo watch --pretty
 |---------|-------------|
 | `init` | Initialize limbo in the current directory |
 | `add <name>` | Add a new task (`--action`, `--verify`, `--result` required; `--parent`, `--description`/`-d`) |
+| `edit <id>` | Edit a task's fields (`--name`, `--description`/`-d`, `--action`, `--verify`, `--result`) |
 | `list` | List all tasks |
 | `tree` | Display tasks in a tree structure (`--show-all`) |
 | `show <id>` | Show details for a specific task |

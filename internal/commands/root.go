@@ -42,4 +42,5 @@ func init() {
 	rootCmd.AddCommand(noteCmd)
 	rootCmd.AddCommand(claimCmd)
 	rootCmd.AddCommand(unclaimCmd)
+	rootCmd.AddCommand(editCmd)
 }
