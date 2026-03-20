@@ -55,6 +55,16 @@ linters:
           - gosec
         text: "G301|G306|G304"
 
+      # G115: Fd() returns small positive int on all platforms — no overflow risk
+      - linters:
+          - gosec
+        text: "G115"
+
+      # G703: Internal paths from findProjectRoot(), not user input
+      - linters:
+          - gosec
+        text: "G703"
+
       # Style suggestions - not enforced
       - linters:
           - gocritic
