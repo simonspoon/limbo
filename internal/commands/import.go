@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/simonspoon/limbo/internal/models"
 	"github.com/simonspoon/limbo/internal/storage"
 	"github.com/spf13/cobra"
 )
@@ -28,9 +29,7 @@ func init() {
 }
 
 func runImport(cmd *cobra.Command, args []string) error {
-	filePath := args[0]
-
-	data, err := os.ReadFile(filePath)
+	data, err := os.ReadFile(args[0])
 	if err != nil {
 		return fmt.Errorf("failed to read file: %w", err)
 	}
@@ -46,74 +45,83 @@ func runImport(cmd *cobra.Command, args []string) error {
 	}
 
 	if importReplace {
-		// Delete all existing tasks
-		existing, err := store.LoadAll()
-		if err != nil {
+		if err := deleteAllTasks(store); err != nil {
 			return err
-		}
-		ids := make([]string, len(existing))
-		for i := range existing {
-			ids[i] = existing[i].ID
-		}
-		if len(ids) > 0 {
-			if err := store.DeleteTasks(ids); err != nil {
-				return err
-			}
 		}
 	}
 
-	// Build mapping from old IDs to new IDs
-	idMapping := make(map[string]string)
-	for i := range importData.Tasks {
-		newID, err := store.GenerateTaskID()
-		if err != nil {
-			return err
-		}
-		idMapping[importData.Tasks[i].ID] = newID
+	idMapping, err := buildIDMapping(store, importData.Tasks)
+	if err != nil {
+		return err
 	}
 
-	// Import tasks with remapped IDs
 	for i := range importData.Tasks {
 		task := importData.Tasks[i]
-		task.ID = idMapping[task.ID]
-
-		// Remap parent reference
-		if task.Parent != nil {
-			if newParent, ok := idMapping[*task.Parent]; ok {
-				task.Parent = &newParent
-			} else {
-				task.Parent = nil // parent not in import set
-			}
-		}
-
-		// Remap blockedBy references
-		if len(task.BlockedBy) > 0 {
-			newBlockedBy := make([]string, 0, len(task.BlockedBy))
-			for _, oldID := range task.BlockedBy {
-				if newID, ok := idMapping[oldID]; ok {
-					newBlockedBy = append(newBlockedBy, newID)
-				}
-				// Drop references to tasks not in the import set
-			}
-			task.BlockedBy = newBlockedBy
-		}
-
+		remapTaskIDs(&task, idMapping)
 		if err := store.SaveTask(&task); err != nil {
 			return fmt.Errorf("failed to save task %s: %w", task.Name, err)
 		}
 	}
 
-	result := map[string]interface{}{
-		"imported": len(importData.Tasks),
-		"mode":     "merge",
-	}
+	mode := "merge"
 	if importReplace {
-		result["mode"] = "replace"
+		mode = "replace"
 	}
-
-	out, _ := json.Marshal(result)
+	out, _ := json.Marshal(map[string]interface{}{
+		"imported": len(importData.Tasks),
+		"mode":     mode,
+	})
 	fmt.Println(string(out))
 	return nil
+}
+
+func deleteAllTasks(store *storage.Storage) error {
+	existing, err := store.LoadAll()
+	if err != nil {
+		return err
+	}
+	ids := make([]string, len(existing))
+	for i := range existing {
+		ids[i] = existing[i].ID
+	}
+	if len(ids) > 0 {
+		return store.DeleteTasks(ids)
+	}
+	return nil
+}
+
+func buildIDMapping(store *storage.Storage, tasks []models.Task) (map[string]string, error) {
+	m := make(map[string]string, len(tasks))
+	for i := range tasks {
+		newID, err := store.GenerateTaskID()
+		if err != nil {
+			return nil, err
+		}
+		m[tasks[i].ID] = newID
+	}
+	return m, nil
+}
+
+func remapTaskIDs(task *models.Task, idMapping map[string]string) {
+	task.ID = idMapping[task.ID]
+
+	if task.Parent != nil {
+		if newParent, ok := idMapping[*task.Parent]; ok {
+			task.Parent = &newParent
+		} else {
+			task.Parent = nil
+		}
+	}
+
+	if len(task.BlockedBy) > 0 {
+		newBlockedBy := make([]string, 0, len(task.BlockedBy))
+		for _, oldID := range task.BlockedBy {
+			if newID, ok := idMapping[oldID]; ok {
+				newBlockedBy = append(newBlockedBy, newID)
+			}
+		}
+		task.BlockedBy = newBlockedBy
+	}
 }
 
 // resetImportFlags resets import flags for testing
