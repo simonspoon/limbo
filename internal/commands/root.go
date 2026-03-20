@@ -45,4 +45,6 @@ func init() {
 	rootCmd.AddCommand(editCmd)
 	rootCmd.AddCommand(templateCmd)
 	rootCmd.AddCommand(searchCmd)
+	rootCmd.AddCommand(exportCmd)
+	rootCmd.AddCommand(importCmd)
 }
