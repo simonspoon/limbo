@@ -7,9 +7,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Version is set at build time via -ldflags "-X github.com/simonspoon/limbo/internal/commands.Version=..."
+var Version = "dev"
+
 var rootCmd = &cobra.Command{
 	Use:     "limbo",
-	Version: "0.1.0",
+	Version: Version,
 	Short:   "CLI Project Manager - A lightweight JSON-based task queue for LLMs",
 	Long: `limbo is a CLI-based task manager designed for use by LLMs and agents.
 It uses a single JSON file for storage and outputs JSON by default for easy parsing.`,

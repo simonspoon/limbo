@@ -26,26 +26,29 @@ jobs:
         run: go test -v ./...
 
       - name: Build binaries
+        env:
+          VERSION: ${{ github.ref_name }}
+          LDFLAGS: -s -w -X github.com/simonspoon/limbo/internal/commands.Version=${{ github.ref_name }}
         run: |
           mkdir -p dist
 
           # Linux amd64
-          GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o dist/limbo-linux-amd64 ./cmd/limbo
+          GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/limbo-linux-amd64 ./cmd/limbo
 
           # Linux arm64
-          GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o dist/limbo-linux-arm64 ./cmd/limbo
+          GOOS=linux GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/limbo-linux-arm64 ./cmd/limbo
 
           # Darwin amd64
-          GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o dist/limbo-darwin-amd64 ./cmd/limbo
+          GOOS=darwin GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/limbo-darwin-amd64 ./cmd/limbo
 
           # Darwin arm64
-          GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o dist/limbo-darwin-arm64 ./cmd/limbo
+          GOOS=darwin GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/limbo-darwin-arm64 ./cmd/limbo
 
           # Windows amd64
-          GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o dist/limbo-windows-amd64.exe ./cmd/limbo
+          GOOS=windows GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/limbo-windows-amd64.exe ./cmd/limbo
 
           # Windows arm64
-          GOOS=windows GOARCH=arm64 go build -ldflags="-s -w" -o dist/limbo-windows-arm64.exe ./cmd/limbo
+          GOOS=windows GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/limbo-windows-arm64.exe ./cmd/limbo
 
       - name: Create checksums
         run: |
