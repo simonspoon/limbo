@@ -260,6 +260,35 @@ limbo unparent <id> [flags]
 
 ---
 
+## Search
+
+### `limbo search <query>`
+
+Search tasks by matching a query string against task name and description (case-insensitive substring match).
+
+**Usage**
+
+```
+limbo search <query> [flags]
+```
+
+**Flags**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--show-all` | `false` | Show all tasks including completed |
+| `--pretty` | `false` | Human-readable output |
+
+**Output (JSON)**
+
+Returns a JSON array of matching task objects, sorted by creation time. Returns `null` if no matches.
+
+**Notes**
+
+- By default, completed tasks are hidden (same visibility rules as `list`). Use `--show-all` to include them.
+
+---
+
 ## Viewing
 
 ### `limbo list`
@@ -614,6 +643,138 @@ Clears the terminal screen on each tick and redraws the task hierarchy as a tree
 **Visibility**
 
 By default, "fully resolved" done tasks are hidden. See the [Visibility Rules](#visibility-rules) section.
+
+---
+
+## Templates
+
+### `limbo template list`
+
+List all available templates (built-in and project-local).
+
+**Usage**
+
+```
+limbo template list [flags]
+```
+
+**Flags**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--pretty` | `false` | Human-readable output |
+
+**Output (JSON)**
+
+```json
+[{"name": "bug-fix", "description": "..."}, {"name": "feature", "description": "..."}]
+```
+
+**Built-in templates:** `bug-fix`, `feature`, `swe-full-cycle`.
+
+---
+
+### `limbo template show <name>`
+
+Display the task hierarchy a template would create without actually creating any tasks.
+
+**Usage**
+
+```
+limbo template show <name> [flags]
+```
+
+**Flags**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--pretty` | `false` | Human-readable tree output |
+
+**Output (JSON)**
+
+Returns the full template definition with task hierarchy.
+
+---
+
+### `limbo template apply <name>`
+
+Apply a template, creating all tasks with parent/child relationships and block dependencies.
+
+**Usage**
+
+```
+limbo template apply <name> [flags]
+```
+
+**Flags**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--parent` | `""` | Parent task ID to nest the template's tasks under |
+| `--pretty` | `false` | Human-readable output |
+
+**Output (JSON)**
+
+```json
+{"createdIDs": ["abcd", "efgh", "ijkl", ...]}
+```
+
+**Notes**
+
+- `--pretty` is a persistent flag — it applies to all `template` subcommands.
+- Templates define task hierarchies with dependencies pre-wired. Use `template show` to preview before applying.
+
+---
+
+## Data Portability
+
+### `limbo export`
+
+Export all tasks as JSON to stdout. Pipe to a file for backup or transfer between projects.
+
+**Usage**
+
+```
+limbo export
+```
+
+**Output (JSON)**
+
+```json
+{"version": "4.0.0", "tasks": [...]}
+```
+
+The output format matches the internal `tasks.json` structure and can be imported with `limbo import`.
+
+---
+
+### `limbo import <file>`
+
+Import tasks from a JSON file previously created by `limbo export`.
+
+**Usage**
+
+```
+limbo import <file> [flags]
+```
+
+**Flags**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--replace` | `false` | Clear all existing tasks before importing |
+
+**Output (JSON)**
+
+```json
+{"imported": 5, "mode": "merge"}
+```
+
+**Behavior**
+
+- **Merge mode (default):** Imported tasks are added alongside existing tasks. All task IDs are remapped to avoid conflicts. Parent and blocker references within the imported set are remapped accordingly.
+- **Replace mode (`--replace`):** All existing tasks are deleted before importing.
+- References to tasks outside the imported set (e.g., a parent ID not in the import file) are dropped.
 
 ---
 

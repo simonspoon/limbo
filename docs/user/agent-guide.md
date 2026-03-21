@@ -173,6 +173,43 @@ limbo watch --interval 1s
 limbo watch --show-all
 ```
 
+## Templates
+
+Templates scaffold entire task hierarchies with a single command. Use them instead of manually creating tasks with `limbo add`.
+
+**Built-in templates:** `bug-fix`, `feature`, `swe-full-cycle`.
+
+```bash
+# List available templates
+limbo template list
+
+# Preview what a template creates
+limbo template show swe-full-cycle --pretty
+
+# Apply a template — creates all tasks with dependencies pre-wired
+limbo template apply feature
+
+# Nest a template under an existing parent task
+limbo template apply bug-fix --parent abcd
+```
+
+Templates define parent/child relationships and block dependencies, so agents don't need to wire them manually. Prefer `template apply` over decomposing tasks by hand when a matching template exists.
+
+## Backup and Transfer
+
+Export and import tasks between projects or for backup:
+
+```bash
+# Export all tasks to a file
+limbo export > backup.json
+
+# Import into another project (tasks get new IDs, references are remapped)
+limbo import backup.json
+
+# Replace all existing tasks with imported ones
+limbo import backup.json --replace
+```
+
 ## Key Constraints
 
 - Tasks cannot be marked `done` if they have undone children

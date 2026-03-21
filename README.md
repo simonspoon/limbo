@@ -72,6 +72,12 @@ limbo watch --pretty
 | `note <id> "message"` | Add a timestamped note to a task |
 | `claim <id> <agent>` | Claim task ownership |
 | `unclaim <id>` | Release task ownership |
+| `search <query>` | Search tasks by name or description (case-insensitive) |
+| `template list` | List available task templates |
+| `template show <name>` | Preview a template's task hierarchy |
+| `template apply <name>` | Apply a template to create tasks (`--parent`) |
+| `export` | Export all tasks as JSON to stdout |
+| `import <file>` | Import tasks from a JSON file (`--replace`) |
 
 All commands output JSON by default. Use `--pretty` for human-readable output with colors.
 
