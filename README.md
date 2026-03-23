@@ -6,11 +6,19 @@ limbo uses a single JSON file (`.limbo/tasks.json`) for storage and outputs JSON
 
 ## Installation
 
+### Homebrew
+
+```bash
+brew install simonspoon/tap/limbo
+```
+
+### Go install
+
 ```bash
 go install github.com/simonspoon/limbo/cmd/limbo@latest
 ```
 
-Or build from source:
+### From source
 
 ```bash
 git clone https://github.com/simonspoon/limbo.git
