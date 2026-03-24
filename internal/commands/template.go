@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/fatih/color"
-	"github.com/simonspoon/limbo/internal/storage"
 	"github.com/simonspoon/limbo/internal/template"
 	"github.com/spf13/cobra"
 )
@@ -54,7 +53,7 @@ func init() {
 }
 
 func runTemplateList(cmd *cobra.Command, args []string) error {
-	store, err := storage.NewStorage()
+	store, err := getStorage()
 	if err != nil {
 		return err
 	}
@@ -98,7 +97,7 @@ func runTemplateList(cmd *cobra.Command, args []string) error {
 }
 
 func runTemplateShow(cmd *cobra.Command, args []string) error {
-	store, err := storage.NewStorage()
+	store, err := getStorage()
 	if err != nil {
 		return err
 	}
@@ -122,7 +121,7 @@ func runTemplateShow(cmd *cobra.Command, args []string) error {
 }
 
 func runTemplateApply(cmd *cobra.Command, args []string) error {
-	store, err := storage.NewStorage()
+	store, err := getStorage()
 	if err != nil {
 		return err
 	}

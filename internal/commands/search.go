@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -32,7 +31,7 @@ func init() {
 func runSearch(cmd *cobra.Command, args []string) error {
 	query := strings.ToLower(args[0])
 
-	store, err := storage.NewStorage()
+	store, err := getStorage()
 	if err != nil {
 		return err
 	}

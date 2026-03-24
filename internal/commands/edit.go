@@ -69,7 +69,7 @@ func runEdit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid task ID: %s", args[0])
 	}
 
-	store, err := storage.NewStorage()
+	store, err := getStorage()
 	if err != nil {
 		return err
 	}

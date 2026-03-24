@@ -50,6 +50,24 @@ func NewStorageAt(dir string) *Storage {
 	return &Storage{rootDir: dir}
 }
 
+// NewStorageGlobal creates a storage instance rooted at the user's home directory.
+// If rootOverride is non-empty, it is used instead of $HOME.
+func NewStorageGlobal(rootOverride string) (*Storage, error) {
+	dir := rootOverride
+	if dir == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return nil, fmt.Errorf("failed to determine home directory: %w", err)
+		}
+		dir = home
+	}
+	limboPath := filepath.Join(dir, LimboDir)
+	if _, err := os.Stat(limboPath); err != nil {
+		return nil, fmt.Errorf("no .limbo directory at %s. Run 'limbo --global init' first", dir)
+	}
+	return &Storage{rootDir: dir}, nil
+}
+
 // findProjectRoot searches for the .limbo directory in current or parent directories
 func findProjectRoot() (string, error) {
 	dir, err := os.Getwd()

@@ -31,7 +31,7 @@ func runBlock(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	store, err := storage.NewStorage()
+	store, err := getStorage()
 	if err != nil {
 		return err
 	}

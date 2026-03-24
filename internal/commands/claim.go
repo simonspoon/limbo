@@ -40,7 +40,7 @@ func runClaim(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("agent name cannot be empty")
 	}
 
-	store, err := storage.NewStorage()
+	store, err := getStorage()
 	if err != nil {
 		return err
 	}

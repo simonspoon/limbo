@@ -17,7 +17,7 @@ var exportCmd = &cobra.Command{
 }
 
 func runExport(cmd *cobra.Command, args []string) error {
-	store, err := storage.NewStorage()
+	store, err := getStorage()
 	if err != nil {
 		return err
 	}

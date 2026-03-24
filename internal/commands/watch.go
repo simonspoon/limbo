@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
@@ -48,7 +47,7 @@ type WatchEvent struct {
 }
 
 func runWatch(cmd *cobra.Command, args []string) error {
-	store, err := storage.NewStorage()
+	store, err := getStorage()
 	if err != nil {
 		return err
 	}

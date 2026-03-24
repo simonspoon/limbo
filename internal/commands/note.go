@@ -36,7 +36,7 @@ func runNote(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("note message cannot be empty")
 	}
 
-	store, err := storage.NewStorage()
+	store, err := getStorage()
 	if err != nil {
 		return err
 	}

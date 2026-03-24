@@ -6,7 +6,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +29,7 @@ type pruneResult struct {
 
 func runPrune(cmd *cobra.Command, args []string) error {
 	// Load storage
-	store, err := storage.NewStorage()
+	store, err := getStorage()
 	if err != nil {
 		return err
 	}

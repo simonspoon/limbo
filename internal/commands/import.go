@@ -39,7 +39,7 @@ func runImport(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to parse import file: %w", err)
 	}
 
-	store, err := storage.NewStorage()
+	store, err := getStorage()
 	if err != nil {
 		return err
 	}

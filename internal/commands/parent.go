@@ -42,7 +42,7 @@ func runParent(cmd *cobra.Command, args []string) error {
 	}
 
 	// Load storage
-	store, err := storage.NewStorage()
+	store, err := getStorage()
 	if err != nil {
 		return err
 	}

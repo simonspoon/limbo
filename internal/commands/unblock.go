@@ -35,7 +35,7 @@ func runUnblock(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid blocked ID: %s", args[1])
 	}
 
-	store, err := storage.NewStorage()
+	store, err := getStorage()
 	if err != nil {
 		return err
 	}
