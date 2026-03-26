@@ -210,6 +210,29 @@ limbo import backup.json
 limbo import backup.json --replace
 ```
 
+## Cross-Project Global Backlog
+
+For agent workflows that span multiple repositories, use the `--global` (`-g`) flag to target a shared backlog at `~/.limbo/`:
+
+```bash
+# Initialize the global backlog once
+limbo --global init
+
+# Add cross-project tasks
+limbo -g add "Audit all services for auth vulnerability" \
+  --action "Check each service for CVE-2026-XXXX" \
+  --verify "All services patched and tested" \
+  --result "List of services and patches applied"
+
+# All commands work with --global
+limbo -g next
+limbo -g list --pretty
+```
+
+You can also set the `LIMBO_ROOT` environment variable to point to a shared directory (e.g., a mounted volume or team-shared path). When `LIMBO_ROOT` is set, it takes effect even without `--global`.
+
+This is useful for orchestrators that coordinate agents across multiple projects from a single task queue.
+
 ## Key Constraints
 
 - Tasks cannot be marked `done` if they have undone children

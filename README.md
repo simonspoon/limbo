@@ -62,7 +62,7 @@ limbo watch --pretty
 
 | Command | Description |
 |---------|-------------|
-| `init` | Initialize limbo in the current directory |
+| `init` | Initialize limbo in the current directory (or global location with `--global`) |
 | `add <name>` | Add a new task (`--action`, `--verify`, `--result` required; `--parent`, `--description`/`-d`) |
 | `edit <id>` | Edit a task's fields (`--name`, `--description`/`-d`, `--action`, `--verify`, `--result`) |
 | `list` | List all tasks |
@@ -87,7 +87,7 @@ limbo watch --pretty
 | `export` | Export all tasks as JSON to stdout |
 | `import <file>` | Import tasks from a JSON file (`--replace`) |
 
-All commands output JSON by default. Use `--pretty` for human-readable output with colors.
+All commands output JSON by default. Use `--pretty` for human-readable output with colors. Use `--global` (`-g`) to target the global backlog at `~/.limbo/` instead of the project-local one.
 
 ### Completed Task Visibility
 
@@ -190,6 +190,19 @@ JSON mode outputs events:
 ## Storage
 
 Tasks are stored in `.limbo/tasks.json` in your project directory. The storage system walks up directories to find the `.limbo/` folder (similar to how git finds `.git/`).
+
+### Global Backlog
+
+Use `--global` (`-g`) to store tasks at `~/.limbo/` for cross-project work:
+
+```bash
+limbo --global init          # initialize global backlog
+limbo -g add "Cross-project task" \
+  --action "Do the thing" --verify "It worked" --result "Summary"
+limbo -g list --pretty
+```
+
+Set the `LIMBO_ROOT` environment variable to override the global backlog location (defaults to `$HOME`).
 
 ## Contributing
 
