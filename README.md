@@ -73,7 +73,11 @@ limbo watch --pretty
 | `parent <id> <parent-id>` | Set a task's parent |
 | `unparent <id>` | Remove a task's parent |
 | `delete <id>` | Delete a task |
-| `prune` | Remove all completed tasks |
+| `prune` | Archive all completed tasks to `.limbo/archive.json` |
+| `archive list` | List archived tasks |
+| `archive show <id>` | Show details for an archived task |
+| `archive restore <id>` | Restore an archived task to the active store |
+| `archive purge` | Permanently delete all archived tasks |
 | `watch` | Watch tasks for live updates |
 | `block <blocker> <blocked>` | Add dependency (blocked waits for blocker) |
 | `unblock <blocker> <blocked>` | Remove dependency |

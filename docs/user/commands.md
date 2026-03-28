@@ -190,7 +190,7 @@ limbo delete <id> [flags]
 
 ### `limbo prune`
 
-Remove all completed tasks. Only deletes tasks with status `done` that have no undone children.
+Archive all completed tasks. Moves tasks with status `done` that have no undone children to `.limbo/archive.json`. Use `limbo archive` subcommands to manage archived tasks.
 
 **Usage**
 
@@ -207,10 +207,10 @@ limbo prune [flags]
 **Output (JSON)**
 
 ```json
-{"deleted": ["abcd", "efgh"], "count": 2}
+{"archived": ["abcd", "efgh"], "count": 2}
 ```
 
-If there are no tasks to prune: `{"deleted": [], "count": 0}`.
+If there are no tasks to prune: `{"archived": [], "count": 0}`.
 
 ---
 
@@ -788,6 +788,112 @@ limbo import <file> [flags]
 - **Merge mode (default):** Imported tasks are added alongside existing tasks. All task IDs are remapped to avoid conflicts. Parent and blocker references within the imported set are remapped accordingly.
 - **Replace mode (`--replace`):** All existing tasks are deleted before importing.
 - References to tasks outside the imported set (e.g., a parent ID not in the import file) are dropped.
+
+---
+
+## Archive
+
+### `limbo archive list`
+
+List all archived tasks.
+
+**Usage**
+
+```
+limbo archive list [flags]
+```
+
+**Flags**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--pretty` | `false` | Human-readable output |
+
+**Output (JSON)**
+
+Returns a JSON array of archived task objects, sorted by creation time. Returns `[]` if the archive is empty.
+
+---
+
+### `limbo archive show <id>`
+
+Display detailed information about an archived task.
+
+**Usage**
+
+```
+limbo archive show <id> [flags]
+```
+
+**Flags**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--pretty` | `false` | Human-readable output |
+
+**Output (JSON)**
+
+Returns the full task object (same shape as `limbo show`).
+
+**Errors**
+
+- Task not found in archive.
+
+---
+
+### `limbo archive restore <id>`
+
+Move an archived task back to the active store with status `done`.
+
+**Usage**
+
+```
+limbo archive restore <id> [flags]
+```
+
+**Flags**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--pretty` | `false` | Human-readable output |
+
+**Output (JSON)**
+
+```json
+{"restored": "abcd", "warning": ""}
+```
+
+The `warning` field is populated when stale references were cleaned up during restore (e.g., orphaned parent pointer, removed invalid blockers).
+
+**Constraints and errors**
+
+- Fails if the task ID already exists in the active store.
+- Stale `BlockedBy` references (IDs not in the active store) are removed.
+- If the task's `Parent` no longer exists in the active store, the parent pointer is cleared (task becomes a root task).
+
+---
+
+### `limbo archive purge`
+
+Permanently delete all archived tasks. This cannot be undone.
+
+**Usage**
+
+```
+limbo archive purge [flags]
+```
+
+**Flags**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--pretty` | `false` | Human-readable output |
+
+**Output (JSON)**
+
+```json
+{"purged": 5}
+```
 
 ---
 

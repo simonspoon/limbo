@@ -25,7 +25,7 @@ func main() {
 
 Each subcommand lives in its own file. The full list of commands registered in `root.go`:
 
-`init`, `add`, `list`, `show`, `status`, `delete`, `edit`, `parent`, `unparent`, `tree`, `next`, `prune`, `watch`, `block`, `unblock`, `note`, `claim`, `unclaim`, `search`, `template`, `export`, `import`
+`init`, `add`, `list`, `show`, `status`, `delete`, `edit`, `parent`, `unparent`, `tree`, `next`, `prune`, `watch`, `block`, `unblock`, `note`, `claim`, `unclaim`, `search`, `template`, `export`, `import`, `archive`
 
 All commands follow the same pattern: call `getStorage()` (defined in `root.go`), perform operations on the returned `*Storage`, then print JSON by default or human-readable output when `--pretty` is passed.
 
@@ -81,8 +81,9 @@ Tasks are stored at `<project-root>/.limbo/tasks.json`. The constants are:
 
 ```go
 const (
-    LimboDir  = ".limbo"
-    TasksFile = "tasks.json"
+    LimboDir    = ".limbo"
+    TasksFile   = "tasks.json"
+    ArchiveFile = "archive.json"
 )
 ```
 

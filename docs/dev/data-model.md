@@ -122,6 +122,8 @@ type TaskStore struct {
 
 **Migration:** On load, v2.0.0 stores are migrated directly to v4.0.0. v3.0.0 stores are migrated to v4.0.0 (new structured fields default to `""`). A `.v3.bak` backup is created before v3→v4 migration.
 
+**Archive:** The `prune` command moves completed tasks to `.limbo/archive.json`, which uses the same `TaskStore` format. The archive file is created lazily on first prune (not by `limbo init`). `GenerateTaskID` checks both `tasks.json` and `archive.json` for ID collisions, so archived task IDs are never reused.
+
 ---
 
 ## NextResult
