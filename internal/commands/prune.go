@@ -27,36 +27,55 @@ type pruneResult struct {
 	Count    int      `json:"count"`
 }
 
+// findPruneableIDs returns IDs of done tasks with no undone descendants.
+func findPruneableIDs(tasks []models.Task, store interface {
+	HasUndoneChildren(string) (bool, error)
+}) ([]string, error) {
+	var ids []string
+	for i := range tasks {
+		if tasks[i].Status != models.StatusDone {
+			continue
+		}
+		hasUndone, err := store.HasUndoneChildren(tasks[i].ID)
+		if err != nil {
+			return nil, err
+		}
+		if !hasUndone {
+			ids = append(ids, tasks[i].ID)
+		}
+	}
+	return ids, nil
+}
+
+// collectTasksByID returns tasks whose IDs are in the given set.
+func collectTasksByID(tasks []models.Task, ids []string) []models.Task {
+	idSet := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		idSet[id] = true
+	}
+	var result []models.Task
+	for i := range tasks {
+		if idSet[tasks[i].ID] {
+			result = append(result, tasks[i])
+		}
+	}
+	return result
+}
+
 func runPrune(cmd *cobra.Command, args []string) error {
-	// Load storage
 	store, err := getStorage()
 	if err != nil {
 		return err
 	}
 
-	// Load all tasks
 	tasks, err := store.LoadAll()
 	if err != nil {
 		return err
 	}
 
-	// Find tasks that can be pruned (done and no undone children)
-	var toPrune []string
-	for i := range tasks {
-		if tasks[i].Status != models.StatusDone {
-			continue
-		}
-
-		// Check for undone children
-		hasUndone, err := store.HasUndoneChildren(tasks[i].ID)
-		if err != nil {
-			return err
-		}
-		if hasUndone {
-			continue
-		}
-
-		toPrune = append(toPrune, tasks[i].ID)
+	toPrune, err := findPruneableIDs(tasks, store)
+	if err != nil {
+		return err
 	}
 
 	if len(toPrune) == 0 {
@@ -70,27 +89,13 @@ func runPrune(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Clean up BlockedBy references before archiving
 	for _, id := range toPrune {
 		if err := store.RemoveFromAllBlockedBy(id); err != nil {
 			return err
 		}
 	}
 
-	// Collect full task objects for archiving
-	pruneSet := make(map[string]bool)
-	for _, id := range toPrune {
-		pruneSet[id] = true
-	}
-	var toArchive []models.Task
-	for i := range tasks {
-		if pruneSet[tasks[i].ID] {
-			toArchive = append(toArchive, tasks[i])
-		}
-	}
-
-	// Archive first, then delete (crash safety: duplicate > data loss)
-	if err := store.ArchiveTasks(toArchive); err != nil {
+	if err := store.ArchiveTasks(collectTasksByID(tasks, toPrune)); err != nil {
 		return err
 	}
 
@@ -98,11 +103,7 @@ func runPrune(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	result := pruneResult{
-		Archived: toPrune,
-		Count:    len(toPrune),
-	}
-
+	result := pruneResult{Archived: toPrune, Count: len(toPrune)}
 	if prunePretty {
 		green := color.New(color.FgGreen)
 		green.Printf("Archived %d completed task(s)\n", len(toPrune))

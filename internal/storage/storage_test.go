@@ -1427,7 +1427,7 @@ func TestArchive_ReadPermissionError(t *testing.T) {
 	archivePath := filepath.Join(tmpDir, LimboDir, ArchiveFile)
 	err = os.Chmod(archivePath, 0000)
 	require.NoError(t, err)
-	defer os.Chmod(archivePath, 0644) // restore so cleanup can remove it
+	defer os.Chmod(archivePath, 0600) //nolint:gosec // restore so cleanup can remove it
 
 	// LoadArchive should fail with a read error
 	_, err = store.LoadArchive()
