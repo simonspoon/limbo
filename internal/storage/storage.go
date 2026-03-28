@@ -15,8 +15,9 @@ import (
 
 // Storage directory and file names.
 const (
-	LimboDir  = ".limbo"
-	TasksFile = "tasks.json"
+	LimboDir    = ".limbo"
+	TasksFile   = "tasks.json"
+	ArchiveFile = "archive.json"
 )
 
 // Storage errors.
@@ -648,6 +649,113 @@ func (s *Storage) saveStore(store *TaskStore) error {
 	return nil
 }
 
+// loadArchive reads the archive.json file, returning an empty store if it doesn't exist
+func (s *Storage) loadArchive() (*TaskStore, error) {
+	archivePath := filepath.Join(s.rootDir, LimboDir, ArchiveFile)
+
+	data, err := os.ReadFile(archivePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return &TaskStore{Version: "4.0.0", Tasks: []models.Task{}}, nil
+		}
+		return nil, fmt.Errorf("failed to read archive file: %w", err)
+	}
+
+	var store TaskStore
+	if err := json.Unmarshal(data, &store); err != nil {
+		return nil, fmt.Errorf("failed to parse archive file: %w", err)
+	}
+
+	return &store, nil
+}
+
+// saveArchive writes the archive.json file
+func (s *Storage) saveArchive(store *TaskStore) error {
+	archivePath := filepath.Join(s.rootDir, LimboDir, ArchiveFile)
+
+	data, err := json.MarshalIndent(store, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal archive: %w", err)
+	}
+
+	if err := os.WriteFile(archivePath, data, 0644); err != nil {
+		return fmt.Errorf("failed to write archive file: %w", err)
+	}
+
+	return nil
+}
+
+// ArchiveTasks appends tasks to the archive file
+func (s *Storage) ArchiveTasks(tasks []models.Task) error {
+	archive, err := s.loadArchive()
+	if err != nil {
+		return err
+	}
+
+	archive.Tasks = append(archive.Tasks, tasks...)
+	return s.saveArchive(archive)
+}
+
+// LoadArchive loads all archived tasks
+func (s *Storage) LoadArchive() ([]models.Task, error) {
+	archive, err := s.loadArchive()
+	if err != nil {
+		return nil, err
+	}
+	return archive.Tasks, nil
+}
+
+// LoadArchivedTask loads a single archived task by ID
+func (s *Storage) LoadArchivedTask(id string) (*models.Task, error) {
+	archive, err := s.loadArchive()
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range archive.Tasks {
+		if archive.Tasks[i].ID == id {
+			return &archive.Tasks[i], nil
+		}
+	}
+	return nil, ErrTaskNotFound
+}
+
+// UnarchiveTask removes a task from the archive and returns it
+func (s *Storage) UnarchiveTask(id string) (*models.Task, error) {
+	archive, err := s.loadArchive()
+	if err != nil {
+		return nil, err
+	}
+
+	var found *models.Task
+	newTasks := make([]models.Task, 0, len(archive.Tasks))
+	for i := range archive.Tasks {
+		if archive.Tasks[i].ID == id {
+			task := archive.Tasks[i]
+			found = &task
+			continue
+		}
+		newTasks = append(newTasks, archive.Tasks[i])
+	}
+
+	if found == nil {
+		return nil, ErrTaskNotFound
+	}
+
+	archive.Tasks = newTasks
+	if err := s.saveArchive(archive); err != nil {
+		return nil, err
+	}
+
+	return found, nil
+}
+
+// PurgeArchive permanently deletes all archived tasks
+func (s *Storage) PurgeArchive() error {
+	archive := &TaskStore{Version: "4.0.0", Tasks: []models.Task{}}
+	return s.saveArchive(archive)
+}
+
 // GetRootDir returns the project root directory
 func (s *Storage) GetRootDir() string {
 	return s.rootDir
@@ -744,10 +852,18 @@ func (s *Storage) GenerateTaskID() (string, error) {
 		return "", err
 	}
 
-	// Build set of existing IDs
+	archive, err := s.loadArchive()
+	if err != nil {
+		return "", err
+	}
+
+	// Build set of existing IDs (active + archived)
 	existingIDs := make(map[string]bool)
 	for i := range store.Tasks {
 		existingIDs[store.Tasks[i].ID] = true
+	}
+	for i := range archive.Tasks {
+		existingIDs[archive.Tasks[i].ID] = true
 	}
 
 	// Generate new ID with collision checking

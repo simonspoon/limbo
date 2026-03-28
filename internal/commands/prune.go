@@ -13,8 +13,8 @@ var prunePretty bool
 
 var pruneCmd = &cobra.Command{
 	Use:   "prune",
-	Short: "Delete all completed tasks",
-	Long:  `Delete all tasks with status 'done' that have no undone children. Safe operation - won't delete tasks with incomplete subtasks.`,
+	Short: "Archive all completed tasks",
+	Long:  `Archive all tasks with status 'done' that have no undone children to .limbo/archive.json. Safe operation - won't archive tasks with incomplete subtasks.`,
 	RunE:  runPrune,
 }
 
@@ -23,8 +23,8 @@ func init() {
 }
 
 type pruneResult struct {
-	Deleted []string `json:"deleted"`
-	Count   int      `json:"count"`
+	Archived []string `json:"archived"`
+	Count    int      `json:"count"`
 }
 
 func runPrune(cmd *cobra.Command, args []string) error {
@@ -60,7 +60,7 @@ func runPrune(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(toPrune) == 0 {
-		result := pruneResult{Deleted: []string{}, Count: 0}
+		result := pruneResult{Archived: []string{}, Count: 0}
 		if prunePretty {
 			fmt.Println("No completed tasks to prune")
 		} else {
@@ -70,26 +70,42 @@ func runPrune(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Clean up BlockedBy references before deleting
+	// Clean up BlockedBy references before archiving
 	for _, id := range toPrune {
 		if err := store.RemoveFromAllBlockedBy(id); err != nil {
 			return err
 		}
 	}
 
-	// Delete the tasks
+	// Collect full task objects for archiving
+	pruneSet := make(map[string]bool)
+	for _, id := range toPrune {
+		pruneSet[id] = true
+	}
+	var toArchive []models.Task
+	for i := range tasks {
+		if pruneSet[tasks[i].ID] {
+			toArchive = append(toArchive, tasks[i])
+		}
+	}
+
+	// Archive first, then delete (crash safety: duplicate > data loss)
+	if err := store.ArchiveTasks(toArchive); err != nil {
+		return err
+	}
+
 	if err := store.DeleteTasks(toPrune); err != nil {
 		return err
 	}
 
 	result := pruneResult{
-		Deleted: toPrune,
-		Count:   len(toPrune),
+		Archived: toPrune,
+		Count:    len(toPrune),
 	}
 
 	if prunePretty {
 		green := color.New(color.FgGreen)
-		green.Printf("Pruned %d completed task(s)\n", len(toPrune))
+		green.Printf("Archived %d completed task(s)\n", len(toPrune))
 	} else {
 		out, _ := json.Marshal(result)
 		fmt.Println(string(out))

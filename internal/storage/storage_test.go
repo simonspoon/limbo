@@ -1065,3 +1065,406 @@ func TestGenerateTaskID_Collision(t *testing.T) {
 	// All IDs should be unique
 	assert.Len(t, generated, 100)
 }
+
+// --- Archive storage-level tests ---
+
+func TestArchiveTasks(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	now := time.Now()
+
+	tasks := []models.Task{
+		{ID: "aaaa", Name: "Task A", Status: models.StatusDone, Created: now, Updated: now},
+		{ID: "aaab", Name: "Task B", Status: models.StatusDone, Created: now, Updated: now},
+	}
+
+	// Archive tasks
+	err = store.ArchiveTasks(tasks)
+	require.NoError(t, err)
+
+	// Verify they're in the archive
+	archived, err := store.LoadArchive()
+	require.NoError(t, err)
+	assert.Len(t, archived, 2)
+	assert.Equal(t, "aaaa", archived[0].ID)
+	assert.Equal(t, "aaab", archived[1].ID)
+}
+
+func TestArchiveTasks_Append(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	now := time.Now()
+
+	// First batch
+	batch1 := []models.Task{
+		{ID: "aaaa", Name: "First", Status: models.StatusDone, Created: now, Updated: now},
+	}
+	require.NoError(t, store.ArchiveTasks(batch1))
+
+	// Second batch
+	batch2 := []models.Task{
+		{ID: "aaab", Name: "Second", Status: models.StatusDone, Created: now, Updated: now},
+	}
+	require.NoError(t, store.ArchiveTasks(batch2))
+
+	// Both batches should be in archive
+	archived, err := store.LoadArchive()
+	require.NoError(t, err)
+	assert.Len(t, archived, 2)
+	assert.Equal(t, "First", archived[0].Name)
+	assert.Equal(t, "Second", archived[1].Name)
+}
+
+func TestLoadArchive_Empty(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	// No archive file exists yet — should return empty slice, not error
+	archived, err := store.LoadArchive()
+	require.NoError(t, err)
+	assert.Len(t, archived, 0)
+}
+
+func TestLoadArchive_WithTasks(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	now := time.Now()
+	tasks := []models.Task{
+		{ID: "aaaa", Name: "Archived A", Status: models.StatusDone, Created: now, Updated: now},
+		{ID: "aaab", Name: "Archived B", Status: models.StatusDone, Created: now, Updated: now},
+		{ID: "aaac", Name: "Archived C", Status: models.StatusDone, Created: now, Updated: now},
+	}
+	require.NoError(t, store.ArchiveTasks(tasks))
+
+	// Load and verify all fields
+	archived, err := store.LoadArchive()
+	require.NoError(t, err)
+	assert.Len(t, archived, 3)
+
+	for i, task := range archived {
+		assert.Equal(t, tasks[i].ID, task.ID)
+		assert.Equal(t, tasks[i].Name, task.Name)
+		assert.Equal(t, models.StatusDone, task.Status)
+	}
+}
+
+func TestLoadArchivedTask_Found(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	now := time.Now()
+	tasks := []models.Task{
+		{ID: "aaaa", Name: "First", Status: models.StatusDone, Created: now, Updated: now},
+		{ID: "aaab", Name: "Second", Status: models.StatusDone, Created: now, Updated: now},
+	}
+	require.NoError(t, store.ArchiveTasks(tasks))
+
+	// Find the second task
+	task, err := store.LoadArchivedTask("aaab")
+	require.NoError(t, err)
+	assert.Equal(t, "aaab", task.ID)
+	assert.Equal(t, "Second", task.Name)
+}
+
+func TestLoadArchivedTask_NotFound(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	// No tasks in archive
+	_, err = store.LoadArchivedTask("zzzz")
+	assert.Equal(t, ErrTaskNotFound, err)
+}
+
+func TestLoadArchivedTask_NotFoundWithTasks(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	now := time.Now()
+	tasks := []models.Task{
+		{ID: "aaaa", Name: "Exists", Status: models.StatusDone, Created: now, Updated: now},
+	}
+	require.NoError(t, store.ArchiveTasks(tasks))
+
+	// Look for a task that is not in the archive
+	_, err = store.LoadArchivedTask("zzzz")
+	assert.Equal(t, ErrTaskNotFound, err)
+}
+
+func TestUnarchiveTask_Found(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	now := time.Now()
+	tasks := []models.Task{
+		{ID: "aaaa", Name: "Stay", Status: models.StatusDone, Created: now, Updated: now},
+		{ID: "aaab", Name: "Remove Me", Status: models.StatusDone, Created: now, Updated: now},
+		{ID: "aaac", Name: "Also Stay", Status: models.StatusDone, Created: now, Updated: now},
+	}
+	require.NoError(t, store.ArchiveTasks(tasks))
+
+	// Unarchive the middle task
+	task, err := store.UnarchiveTask("aaab")
+	require.NoError(t, err)
+	assert.Equal(t, "aaab", task.ID)
+	assert.Equal(t, "Remove Me", task.Name)
+
+	// Verify only two remain in archive
+	archived, err := store.LoadArchive()
+	require.NoError(t, err)
+	assert.Len(t, archived, 2)
+	assert.Equal(t, "aaaa", archived[0].ID)
+	assert.Equal(t, "aaac", archived[1].ID)
+}
+
+func TestUnarchiveTask_NotFound(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	// Empty archive
+	_, err = store.UnarchiveTask("zzzz")
+	assert.Equal(t, ErrTaskNotFound, err)
+}
+
+func TestUnarchiveTask_NotFoundWithTasks(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	now := time.Now()
+	tasks := []models.Task{
+		{ID: "aaaa", Name: "Exists", Status: models.StatusDone, Created: now, Updated: now},
+	}
+	require.NoError(t, store.ArchiveTasks(tasks))
+
+	// Look for a task that is not there
+	_, err = store.UnarchiveTask("zzzz")
+	assert.Equal(t, ErrTaskNotFound, err)
+
+	// Existing task should be untouched
+	archived, err := store.LoadArchive()
+	require.NoError(t, err)
+	assert.Len(t, archived, 1)
+}
+
+func TestPurgeArchive(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	now := time.Now()
+	tasks := []models.Task{
+		{ID: "aaaa", Name: "A", Status: models.StatusDone, Created: now, Updated: now},
+		{ID: "aaab", Name: "B", Status: models.StatusDone, Created: now, Updated: now},
+	}
+	require.NoError(t, store.ArchiveTasks(tasks))
+
+	// Purge
+	err = store.PurgeArchive()
+	require.NoError(t, err)
+
+	// Archive should be empty
+	archived, err := store.LoadArchive()
+	require.NoError(t, err)
+	assert.Len(t, archived, 0)
+}
+
+func TestPurgeArchive_AlreadyEmpty(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	// Purge with no archive file — should not error
+	err = store.PurgeArchive()
+	require.NoError(t, err)
+
+	archived, err := store.LoadArchive()
+	require.NoError(t, err)
+	assert.Len(t, archived, 0)
+}
+
+func TestLoadArchive_CorruptJSON(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	// Write corrupt JSON to archive file
+	archivePath := filepath.Join(tmpDir, LimboDir, ArchiveFile)
+	err = os.WriteFile(archivePath, []byte("{not valid json["), 0644)
+	require.NoError(t, err)
+
+	// LoadArchive should fail
+	_, err = store.LoadArchive()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to parse archive file")
+}
+
+func TestLoadArchivedTask_CorruptJSON(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	// Write corrupt JSON to archive file
+	archivePath := filepath.Join(tmpDir, LimboDir, ArchiveFile)
+	err = os.WriteFile(archivePath, []byte("{corrupt}"), 0644)
+	require.NoError(t, err)
+
+	_, err = store.LoadArchivedTask("aaaa")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to parse archive file")
+}
+
+func TestUnarchiveTask_CorruptJSON(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	// Write corrupt JSON to archive file
+	archivePath := filepath.Join(tmpDir, LimboDir, ArchiveFile)
+	err = os.WriteFile(archivePath, []byte("{{bad}}"), 0644)
+	require.NoError(t, err)
+
+	_, err = store.UnarchiveTask("aaaa")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to parse archive file")
+}
+
+func TestArchiveTasks_CorruptExistingArchive(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	// Write corrupt JSON to archive file
+	archivePath := filepath.Join(tmpDir, LimboDir, ArchiveFile)
+	err = os.WriteFile(archivePath, []byte("not json"), 0644)
+	require.NoError(t, err)
+
+	now := time.Now()
+	tasks := []models.Task{
+		{ID: "aaaa", Name: "A", Status: models.StatusDone, Created: now, Updated: now},
+	}
+
+	// ArchiveTasks should fail because it tries to load existing archive first
+	err = store.ArchiveTasks(tasks)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to parse archive file")
+}
+
+func TestArchive_ReadPermissionError(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	// Create a valid archive then make it unreadable
+	now := time.Now()
+	tasks := []models.Task{
+		{ID: "aaaa", Name: "A", Status: models.StatusDone, Created: now, Updated: now},
+	}
+	require.NoError(t, store.ArchiveTasks(tasks))
+
+	archivePath := filepath.Join(tmpDir, LimboDir, ArchiveFile)
+	err = os.Chmod(archivePath, 0000)
+	require.NoError(t, err)
+	defer os.Chmod(archivePath, 0644) // restore so cleanup can remove it
+
+	// LoadArchive should fail with a read error
+	_, err = store.LoadArchive()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to read archive file")
+}
+
+func TestGenerateTaskID_ArchiveCollision(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	now := time.Now()
+
+	// Archive a task with a known ID
+	archivedTask := []models.Task{
+		{ID: "aaaa", Name: "Archived", Status: models.StatusDone, Created: now, Updated: now},
+	}
+	require.NoError(t, store.ArchiveTasks(archivedTask))
+
+	// Generate many IDs — none should collide with the archived "aaaa"
+	for i := 0; i < 200; i++ {
+		id, err := store.GenerateTaskID()
+		require.NoError(t, err)
+		assert.NotEqual(t, "aaaa", id, "GenerateTaskID returned an ID that collides with an archived task")
+
+		// Save the task so subsequent calls also avoid it
+		task := &models.Task{
+			ID:      id,
+			Name:    "Generated",
+			Status:  models.StatusTodo,
+			Created: now,
+			Updated: now,
+		}
+		require.NoError(t, store.SaveTask(task))
+	}
+}
