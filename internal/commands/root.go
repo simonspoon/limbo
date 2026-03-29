@@ -11,8 +11,6 @@ import (
 // Version is set at build time via -ldflags "-X github.com/simonspoon/limbo/internal/commands.Version=..."
 var Version = "dev"
 
-var globalFlag bool
-
 var rootCmd = &cobra.Command{
 	Use:     "limbo",
 	Version: Version,
@@ -29,18 +27,12 @@ func Execute() {
 	}
 }
 
-// getStorage returns a Storage instance respecting --global and LIMBO_ROOT.
+// getStorage returns a Storage instance for the current project.
 func getStorage() (*storage.Storage, error) {
-	rootOverride := os.Getenv("LIMBO_ROOT")
-	if globalFlag || rootOverride != "" {
-		return storage.NewStorageGlobal(rootOverride)
-	}
 	return storage.NewStorage()
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&globalFlag, "global", "g", false, "Use the global backlog (~/.limbo)")
-
 	// Add subcommands
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(addCmd)

@@ -103,7 +103,7 @@ Key points:
 - Use the `Use`, `Short`, `Long`, and `RunE` fields.
 - Register flags in `func init()` using `newCmd.Flags().BoolVar(...)`, `StringVar(...)`, etc.
 - The run function is a named function (`runNew`) referenced in `RunE`, not an anonymous closure. This makes it directly callable from tests.
-- Use `getStorage()` (not `storage.NewStorage()` directly) to obtain a `*Storage`. This helper respects the `--global` flag and `LIMBO_ROOT` env var.
+- Use `getStorage()` (not `storage.NewStorage()` directly) to obtain a `*Storage`.
 
 ### 2. Register the command in `internal/commands/root.go`
 

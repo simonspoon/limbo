@@ -29,28 +29,12 @@ type initResult struct {
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
-	// Determine target directory
-	var cwd string
-	var err error
-
-	rootOverride := os.Getenv("LIMBO_ROOT")
-	if globalFlag || rootOverride != "" {
-		if rootOverride != "" {
-			cwd = rootOverride
-		} else {
-			cwd, err = os.UserHomeDir()
-			if err != nil {
-				return fmt.Errorf("failed to determine home directory: %w", err)
-			}
-		}
-	} else {
-		cwd, err = os.Getwd()
-		if err != nil {
-			return fmt.Errorf("failed to get current directory: %w", err)
-		}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current directory: %w", err)
 	}
 
-	// Create storage at target directory
+	// Create storage at current directory
 	store := storage.NewStorageAt(cwd)
 
 	// Initialize the project

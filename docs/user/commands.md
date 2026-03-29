@@ -8,14 +8,9 @@ Task IDs are 4-character lowercase alphabetic strings (e.g., `abcd`). IDs are ca
 
 These flags are available on every command:
 
-| Flag | Short | Default | Description |
-|------|-------|---------|-------------|
-| `--global` | `-g` | `false` | Use the global backlog at `~/.limbo/` instead of the project-local one |
-| `--pretty` | | `false` | Human-readable output (default varies per command) |
-
-The `LIMBO_ROOT` environment variable overrides the global backlog location. When set, `--global` targets `$LIMBO_ROOT/.limbo/` instead of `~/.limbo/`.
-
-Precedence: `LIMBO_ROOT` > `--global` > project-local (walk-up discovery).
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--pretty` | `false` | Human-readable output (default varies per command) |
 
 ---
 
@@ -23,7 +18,7 @@ Precedence: `LIMBO_ROOT` > `--global` > project-local (walk-up discovery).
 
 ### `limbo init`
 
-Initialize limbo in the current directory (or the global location when `--global` or `LIMBO_ROOT` is set). Creates `.limbo/tasks.json`.
+Initialize limbo in the current directory. Creates `.limbo/tasks.json`.
 
 **Usage**
 

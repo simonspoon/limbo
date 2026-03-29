@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -465,55 +463,4 @@ func TestArchive_FullLifecycle(t *testing.T) {
 
 	archived, _ = store.LoadArchive()
 	assert.Len(t, archived, 0)
-}
-
-// --- global flag integration test ---
-
-func TestPruneGlobal_ArchivesToGlobalPath(t *testing.T) {
-	// Create a temp dir to act as the global LIMBO_ROOT
-	globalRoot, err := os.MkdirTemp("", "limbo-global-test-*")
-	require.NoError(t, err)
-	defer os.RemoveAll(globalRoot)
-
-	// Initialize a global .limbo store
-	globalStore := storage.NewStorageAt(globalRoot)
-	require.NoError(t, globalStore.Init())
-
-	// Add a done task to the global store
-	now := time.Now()
-	doneTask := &models.Task{
-		ID:      "gggg",
-		Name:    "Global Done Task",
-		Status:  models.StatusDone,
-		Created: now,
-		Updated: now,
-	}
-	require.NoError(t, globalStore.SaveTask(doneTask))
-
-	// Set LIMBO_ROOT to point to our temp global dir
-	origLimboRoot := os.Getenv("LIMBO_ROOT")
-	os.Setenv("LIMBO_ROOT", globalRoot)
-	defer os.Setenv("LIMBO_ROOT", origLimboRoot)
-
-	// Run prune (getStorage will use LIMBO_ROOT)
-	prunePretty = false
-	err = runPrune(nil, nil)
-	require.NoError(t, err)
-
-	// Verify archive.json exists at the global path
-	archivePath := filepath.Join(globalRoot, storage.LimboDir, storage.ArchiveFile)
-	_, err = os.Stat(archivePath)
-	require.NoError(t, err, "archive.json should exist at global path %s", archivePath)
-
-	// Verify the archived task is in the global archive
-	archived, err := globalStore.LoadArchive()
-	require.NoError(t, err)
-	assert.Len(t, archived, 1)
-	assert.Equal(t, "gggg", archived[0].ID)
-	assert.Equal(t, "Global Done Task", archived[0].Name)
-
-	// Verify the active store no longer has the task
-	tasks, err := globalStore.LoadAll()
-	require.NoError(t, err)
-	assert.Len(t, tasks, 0)
 }

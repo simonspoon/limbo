@@ -28,34 +28,6 @@ limbo init
 
 limbo's storage walks up directories to find `.limbo/` — the same way git finds `.git/`. This means you can run limbo commands from any subdirectory of your project and it will find the right task file. Run `limbo init` from the project root so all subdirectories can discover it.
 
-## Global Backlog
-
-For tasks that span multiple projects, use the `--global` flag (or `-g`) to store tasks at `~/.limbo/` instead of a project directory:
-
-```bash
-# Initialize the global backlog
-limbo --global init
-
-# Add a cross-project task
-limbo -g add "Review all repos for dependency updates" \
-  --action "Check each repo for outdated dependencies" \
-  --verify "All repos updated" \
-  --result "List of repos and changes made"
-
-# List global tasks
-limbo -g list --pretty
-```
-
-All commands respect `--global`. You can also set the `LIMBO_ROOT` environment variable to use a custom directory instead of `~/.limbo/`:
-
-```bash
-export LIMBO_ROOT=/path/to/shared/backlog
-limbo init    # creates /path/to/shared/backlog/.limbo/tasks.json
-limbo list    # reads from that location
-```
-
-When `LIMBO_ROOT` is set, it takes effect even without `--global`.
-
 ## Basic Task Lifecycle
 
 Here is a concrete example of the typical workflow:

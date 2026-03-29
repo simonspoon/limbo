@@ -29,7 +29,7 @@ Each subcommand lives in its own file. The full list of commands registered in `
 
 All commands follow the same pattern: call `getStorage()` (defined in `root.go`), perform operations on the returned `*Storage`, then print JSON by default or human-readable output when `--pretty` is passed.
 
-`getStorage()` is a helper that respects the `--global` persistent flag and the `LIMBO_ROOT` environment variable. When either is set, it calls `storage.NewStorageGlobal(rootOverride)` instead of `storage.NewStorage()`. A package-level `globalFlag` variable holds the `--global` flag state, registered as a persistent flag on `rootCmd`.
+`getStorage()` is a thin wrapper that delegates to `storage.NewStorage()`.
 
 See `internal/commands/root.go` for the `init()` function that wires all subcommands to `rootCmd`.
 
@@ -132,8 +132,6 @@ func findProjectRoot() (string, error) {
 
 `NewStorageAt(dir string)` bypasses discovery and is used in tests to point at a temporary directory.
 
-`NewStorageGlobal(rootOverride string)` creates a storage instance rooted at the user's home directory (or `rootOverride` if non-empty). Unlike `NewStorage()`, it does not walk up the directory tree — it checks for `.limbo/` directly at the target location and returns an error if not found, prompting the user to run `limbo --global init` first.
-
 ### Core Storage Methods
 
 **LoadAll** loads the full task list (see `storage.go:97`):
@@ -225,7 +223,7 @@ When `getDeepestInProgress` returns nil (no in-progress tasks exist), `getRootTo
 A typical command execution follows this path:
 
 1. Cobra dispatches to the command's `RunE` function.
-2. The command calls `getStorage()`, which checks the `--global` flag and `LIMBO_ROOT` env var. If either is set, it calls `storage.NewStorageGlobal()` targeting `~/.limbo/` (or the override path). Otherwise it calls `storage.NewStorage()`, which auto-discovers the `.limbo/` directory by walking up from `os.Getwd()`.
+2. The command calls `getStorage()`, which delegates to `storage.NewStorage()`. This auto-discovers the `.limbo/` directory by walking up from `os.Getwd()`.
 3. The command calls one or more storage methods (`LoadAll`, `LoadTask`, `SaveTask`, etc.).
 4. Each storage method calls the unexported `loadStore`, which reads and JSON-unmarshals `tasks.json` from `<rootDir>/.limbo/tasks.json`.
 5. The method operates on the in-memory `TaskStore`, then calls `saveStore` to write the updated JSON back to disk.
