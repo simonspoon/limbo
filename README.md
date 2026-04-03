@@ -2,7 +2,7 @@
 
 A CLI-based task manager designed for use by LLMs and AI agents.
 
-limbo uses a single JSON file (`.limbo/tasks.json`) for storage and outputs JSON by default for easy parsing. It supports hierarchical task structures with progressive decomposition workflows.
+limbo uses two-tier file-based storage: a lean JSON index (`.limbo/tasks.json`) for metadata and per-task markdown files (`.limbo/context/<id>/context.md`) for content. All commands output JSON by default for easy parsing. It supports hierarchical task structures with progressive decomposition workflows.
 
 ## Installation
 
@@ -194,7 +194,13 @@ JSON mode outputs events:
 
 ## Storage
 
-Tasks are stored in `.limbo/tasks.json` in your project directory. The storage system walks up directories to find the `.limbo/` folder (similar to how git finds `.git/`).
+limbo uses two-tier storage within the `.limbo/` directory:
+
+- **`tasks.json`** — lightweight JSON index containing task metadata (id, name, status, parent, blockedBy, owner, timestamps)
+- **`context/<id>/context.md`** — per-task markdown file with content fields (description, action, verify, result, outcome, notes) using H2 sections
+- **`archive.json`** — archived tasks (complete data, created by `limbo prune`)
+
+The storage system walks up directories to find the `.limbo/` folder (similar to how git finds `.git/`). The split is transparent — commands like `show` and `edit` merge both tiers automatically.
 
 ## Contributing
 

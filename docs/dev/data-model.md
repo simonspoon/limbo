@@ -117,10 +117,10 @@ type TaskStore struct {
 
 | Field | Go type | JSON tag | Description |
 |-------|---------|----------|-------------|
-| `Version` | `string` | `"version"` | Schema version. Always `"4.0.0"`. |
-| `Tasks` | `[]models.Task` | `"tasks"` | Flat list of all tasks. Relationships (parent/child, blockers) are encoded within each Task. |
+| `Version` | `string` | `"version"` | Schema version. Currently `"5.0.0"`. |
+| `Tasks` | `[]models.Task` | `"tasks"` | Flat list of all tasks. In v5, content fields (Description, Action, Verify, Result, Outcome, Notes) are empty in the JSON — they are stored in per-task context files. Relationships (parent/child, blockers) are encoded within each Task. |
 
-**Migration:** On load, v2.0.0 stores are migrated directly to v4.0.0. v3.0.0 stores are migrated to v4.0.0 (new structured fields default to `""`). A `.v3.bak` backup is created before v3→v4 migration.
+**Migration:** On load, older stores are migrated automatically: v2.0.0→v4.0.0 (int64 to string IDs), v3.0.0→v4.0.0 (add structured fields), v4.0.0→v5.0.0 (split content into context files). A backup is created before each migration (`.bak`, `.v3.bak`, `.v4.bak`).
 
 **Archive:** The `prune` command moves completed tasks to `.limbo/archive.json`, which uses the same `TaskStore` format. The archive file is created lazily on first prune (not by `limbo init`). `GenerateTaskID` checks both `tasks.json` and `archive.json` for ID collisions, so archived task IDs are never reused.
 
@@ -181,38 +181,26 @@ type WatchEvent struct {
 
 ---
 
-## tasks.json Example
+## tasks.json Example (v5)
+
+In v5, `tasks.json` contains only metadata. Content fields are stored in context files.
 
 ```json
 {
-  "version": "4.0.0",
+  "version": "5.0.0",
   "tasks": [
     {
       "id": "abcd",
       "name": "Implement authentication",
-      "description": "Add JWT-based login and token refresh",
-      "action": "Implement JWT login and token refresh endpoints",
-      "verify": "Run integration tests: go test ./...",
-      "result": "List endpoints added and test results",
       "parent": null,
       "status": "in-progress",
-      "blockedBy": [],
       "owner": "agent-1",
-      "notes": [
-        {
-          "content": "Started with login endpoint",
-          "timestamp": "2026-02-20T10:00:00.000000000Z"
-        }
-      ],
       "created": "2026-02-20T09:00:00.000000000Z",
       "updated": "2026-02-20T10:00:00.000000000Z"
     },
     {
       "id": "efgh",
       "name": "Write login handler",
-      "action": "Implement POST /login handler in auth package",
-      "verify": "go test ./internal/auth/... passes",
-      "result": "File path of handler and passing test output",
       "parent": "abcd",
       "status": "todo",
       "created": "2026-02-20T09:01:00.000000000Z",
@@ -221,9 +209,6 @@ type WatchEvent struct {
     {
       "id": "ijkl",
       "name": "Write token refresh handler",
-      "action": "Implement POST /refresh handler in auth package",
-      "verify": "go test ./internal/auth/... passes",
-      "result": "File path of handler and passing test output",
       "parent": "abcd",
       "status": "todo",
       "blockedBy": ["efgh"],
@@ -234,9 +219,30 @@ type WatchEvent struct {
 }
 ```
 
+The corresponding content lives in context files. For example, `.limbo/context/abcd/context.md`:
+
+```markdown
+## Action
+Implement JWT login and token refresh endpoints
+
+## Verify
+Run integration tests: go test ./...
+
+## Result
+List endpoints added and test results
+
+## Description
+Add JWT-based login and token refresh
+
+## Notes
+### 2026-02-20T10:00:00Z
+Started with login endpoint
+```
+
 Notes on the example:
 
 - `"parent": null` serializes as a JSON `null` (the field is never omitted because the struct tag has no `omitempty`).
-- Fields with `omitempty` (`description`, `blockedBy`, `owner`, `notes`) are absent from the JSON when empty, as shown for `efgh`.
+- Content fields (`description`, `action`, `verify`, `result`, `outcome`, `notes`) are absent from the JSON — they live in context files.
+- Fields with `omitempty` (`blockedBy`, `owner`) are absent from the JSON when empty, as shown for `efgh`.
 - `blockedBy` for `ijkl` means `efgh` must reach `"done"` before `ijkl` can be started.
-- Timestamps use RFC3339Nano format.
+- Timestamps use RFC3339Nano format in JSON, RFC3339 in context files.

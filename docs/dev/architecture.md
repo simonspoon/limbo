@@ -75,15 +75,34 @@ All business logic lives here. Commands do not manipulate task slices directly; 
 
 ## Storage Design
 
-### File Location
+### Two-Tier Layout
 
-Tasks are stored at `<project-root>/.limbo/tasks.json`. The constants are:
+limbo uses a split storage model:
+
+```
+<project-root>/.limbo/
+    tasks.json              # JSON index — metadata only
+    context/                # Per-task content files
+        <id>/
+            context.md      # H2-delimited markdown (action, verify, result, etc.)
+            attachments/    # Reserved for future binary attachments
+    archive.json            # Archived tasks (complete data, created by prune)
+```
+
+**JSON index (`tasks.json`)** contains only fast-query metadata: id, name, status, parent, blockedBy, owner, created, updated. Content fields (description, action, verify, result, outcome, notes) are stored in per-task context files.
+
+**Context files (`context/<id>/context.md`)** use H2-delimited markdown sections. Known sections are ordered: Action, Verify, Result, Outcome, Description, then custom sections alphabetically, Notes always last. Empty sections are omitted.
+
+The split is transparent to commands — `SaveTask` writes to both tiers, `LoadTask`/`LoadAll` merge them back into a single Task struct.
+
+### File Location Constants
 
 ```go
 const (
-    LimboDir    = ".limbo"
-    TasksFile   = "tasks.json"
-    ArchiveFile = "archive.json"
+    LimboDir       = ".limbo"
+    TasksFile      = "tasks.json"
+    ArchiveFile    = "archive.json"
+    ContextDirName = "context"
 )
 ```
 
@@ -96,7 +115,7 @@ type TaskStore struct {
 }
 ```
 
-The current version string is `"4.0.0"`. The file is written with `json.MarshalIndent` using two-space indentation (see `storage.go:590`).
+The current version string is `"5.0.0"`. Tasks in the JSON index have content fields stripped (empty strings / nil). The file is written with `json.MarshalIndent` using two-space indentation.
 
 ### Storage struct
 
@@ -134,27 +153,33 @@ func findProjectRoot() (string, error) {
 
 ### Core Storage Methods
 
-**LoadAll** loads the full task list (see `storage.go:97`):
+**LoadAll** loads the full task list, merging content from context files:
 
 ```go
 func (s *Storage) LoadAll() ([]models.Task, error)
 ```
 
-**LoadTask** finds a single task by ID, returns `ErrTaskNotFound` if absent (see `storage.go:106`):
+**LoadAllIndex** loads tasks from the JSON index only (no context file I/O). Use for commands that only need metadata (list, tree, next):
+
+```go
+func (s *Storage) LoadAllIndex() ([]models.Task, error)
+```
+
+**LoadTask** finds a single task by ID, merges content from its context file, returns `ErrTaskNotFound` if absent:
 
 ```go
 func (s *Storage) LoadTask(id string) (*models.Task, error)
 ```
 
-**SaveTask** performs an upsert: it scans the task slice for a matching ID, updates in place if found, or appends if not found, then writes the full store back to disk (see `storage.go:121-142`):
+**SaveTask** performs an upsert with two-tier split: extracts content fields into `context/<id>/context.md`, strips them from the task, then writes the metadata-only task to the JSON index. If all content fields are empty, deletes the context directory instead:
 
 ```go
 func (s *Storage) SaveTask(task *models.Task) error
 ```
 
-**DeleteTask** and **DeleteTasks** rebuild the slice excluding the target ID(s) and write back (see `storage.go:145`, `storage.go:170`).
+**DeleteTask** and **DeleteTasks** remove from the JSON index and delete the corresponding `context/<id>/` directory.
 
-**loadStore** / **saveStore** are unexported helpers that handle JSON marshaling and file I/O. `loadStore` also handles schema migration on first read: v2.0.0 stores (int64 IDs) are migrated directly to v4.0.0; v3.0.0 stores are migrated to v4.0.0 (new structured fields default to `""`). A backup is written before each migration (see `storage.go:477`, `storage.go:587`).
+**loadStore** / **saveStore** are unexported helpers that handle JSON marshaling and file I/O. `loadStore` also handles schema migration on first read: v2→v4 (int64 to string IDs), v3→v4 (add structured fields), v4→v5 (split content into context files). A backup is written before each migration.
 
 ### Task ID Generation
 
@@ -225,11 +250,11 @@ A typical command execution follows this path:
 1. Cobra dispatches to the command's `RunE` function.
 2. The command calls `getStorage()`, which delegates to `storage.NewStorage()`. This auto-discovers the `.limbo/` directory by walking up from `os.Getwd()`.
 3. The command calls one or more storage methods (`LoadAll`, `LoadTask`, `SaveTask`, etc.).
-4. Each storage method calls the unexported `loadStore`, which reads and JSON-unmarshals `tasks.json` from `<rootDir>/.limbo/tasks.json`.
-5. The method operates on the in-memory `TaskStore`, then calls `saveStore` to write the updated JSON back to disk.
+4. **Load path:** `loadStore` reads the JSON index from `tasks.json`. Then `mergeContext` reads `context/<id>/context.md` for each task and populates content fields. `LoadAllIndex` skips the merge step.
+5. **Save path:** `extractContext` builds a section map from the task's content fields and writes it to `context/<id>/context.md`. The task copy has content fields stripped, then is written to the JSON index via `saveStore`.
 6. The command marshals its result to JSON and prints to stdout (or uses `--pretty` for human-readable output).
 
-There is no in-memory cache; every storage method call performs a full file read and (if mutating) a full file write. This keeps concurrency semantics simple at the cost of I/O efficiency, which is acceptable for CLI use.
+There is no in-memory cache; every storage method call performs a full file read and (if mutating) a full file write. The two-tier split keeps the JSON index small and fast for metadata-only queries while storing potentially large content in separate files.
 
 ---
 

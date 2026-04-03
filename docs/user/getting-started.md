@@ -1,6 +1,6 @@
 # Getting Started
 
-limbo is a CLI-based task manager designed for use by LLMs and AI agents. It stores tasks in a single JSON file and outputs JSON by default for easy programmatic parsing.
+limbo is a CLI-based task manager designed for use by LLMs and AI agents. It uses two-tier file-based storage (a JSON index for metadata plus per-task markdown files for content) and outputs JSON by default for easy programmatic parsing.
 
 ## Installation
 
@@ -20,7 +20,7 @@ go build -o limbo ./cmd/limbo
 
 ## Initialize a Project
 
-Run `limbo init` from your project root to create `.limbo/tasks.json` in the current directory:
+Run `limbo init` from your project root to create the `.limbo/` directory (containing `tasks.json` and `context/`):
 
 ```bash
 limbo init

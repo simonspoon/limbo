@@ -18,7 +18,7 @@ These flags are available on every command:
 
 ### `limbo init`
 
-Initialize limbo in the current directory. Creates `.limbo/tasks.json`.
+Initialize limbo in the current directory. Creates `.limbo/` with `tasks.json` and `context/` directory.
 
 **Usage**
 
@@ -748,10 +748,10 @@ limbo export
 **Output (JSON)**
 
 ```json
-{"version": "4.0.0", "tasks": [...]}
+{"version": "5.0.0", "tasks": [...]}
 ```
 
-The output format matches the internal `tasks.json` structure and can be imported with `limbo import`.
+The output includes full task data (content fields merged from context files). This can be imported with `limbo import`.
 
 ---
 

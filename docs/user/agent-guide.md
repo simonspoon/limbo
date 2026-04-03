@@ -7,7 +7,7 @@ limbo is a CLI task manager built specifically for LLMs and AI agents. This guid
 - **JSON output by default** -- every command returns machine-parseable JSON, no scraping needed
 - **Depth-first `next` command** -- supports progressive decomposition, letting agents break large tasks into subtasks and work through them systematically
 - **Ownership system** -- multiple agents can coordinate on the same task queue without conflicts
-- **File-based storage** -- a single `.limbo/tasks.json` file, no server or daemon required
+- **File-based storage** -- `.limbo/` directory with a JSON index and per-task context files, no server or daemon required
 
 ## Single-Agent Workflow
 
@@ -120,7 +120,7 @@ A task cannot be marked `done` if it has undone children, so agents must complet
 
 ## Watch Mode for Orchestrators
 
-The `watch` command monitors `.limbo/tasks.json` for changes and outputs updates in real-time. This is useful for orchestrator processes that coordinate multiple agents.
+The `watch` command monitors the `.limbo/` directory for changes and outputs updates in real-time. This is useful for orchestrator processes that coordinate multiple agents.
 
 ### JSON mode (default)
 
@@ -216,6 +216,6 @@ limbo import backup.json --replace
 - Tasks cannot be set to `in-progress` if they are blocked by incomplete dependencies
 - Children cannot be added to `done` tasks
 - Deleting a task orphans its children (sets their parent to nil)
-- `limbo prune` removes all `done` tasks
+- `limbo prune` archives all `done` tasks (moves to `archive.json` and cleans up context directories)
 - Notes are append-only
 - Structured tasks (those created with `--action`, `--verify`, `--result`) require `--outcome` when marking `done`
