@@ -211,7 +211,11 @@ func (s *Storage) DeleteTask(id string) error {
 	}
 
 	store.Tasks = newTasks
-	return s.saveStore(store)
+	if err := s.saveStore(store); err != nil {
+		return err
+	}
+	_ = s.DeleteContext(id)
+	return nil
 }
 
 // DeleteTasks deletes multiple tasks by ID
@@ -234,7 +238,13 @@ func (s *Storage) DeleteTasks(ids []string) error {
 	}
 
 	store.Tasks = newTasks
-	return s.saveStore(store)
+	if err := s.saveStore(store); err != nil {
+		return err
+	}
+	for _, id := range ids {
+		_ = s.DeleteContext(id)
+	}
+	return nil
 }
 
 // GetChildren returns all tasks that have the given task as their parent
@@ -551,10 +561,11 @@ func (s *Storage) loadStore() (*TaskStore, error) {
 		return s.migrateFromV3(data)
 	}
 
-	// v4.0.0 and v5.0.0 share the same JSON structure.
-	// v4.0.0 stores have content fields inline in the JSON; migration to v5.0.0
-	// (splitting content into context files) is handled by a separate migration task.
-	// v5.0.0 stores have content fields stripped from the JSON (stored in context files).
+	// If v4.0.0, migrate to v5.0.0 (split content into context files)
+	if versionCheck.Version == "4.0.0" {
+		return s.migrateFromV4(data)
+	}
+
 	var store TaskStore
 	if err := json.Unmarshal(data, &store); err != nil {
 		return nil, fmt.Errorf("failed to parse tasks file: %w", err)
@@ -659,6 +670,56 @@ func (s *Storage) migrateFromV3(data []byte) (*TaskStore, error) {
 	store.Version = "4.0.0"
 
 	// Save migrated store
+	if err := s.saveStore(&store); err != nil {
+		return nil, fmt.Errorf("failed to save migrated store: %w", err)
+	}
+
+	return &store, nil
+}
+
+// migrateFromV4 migrates from v4.0.0 to v5.0.0 (split content into per-task context files)
+func (s *Storage) migrateFromV4(data []byte) (*TaskStore, error) {
+	// Create backup before migration
+	storePath := filepath.Join(s.rootDir, LimboDir, TasksFile)
+	backupPath := storePath + ".v4.bak"
+	if err := os.WriteFile(backupPath, data, 0644); err != nil {
+		return nil, fmt.Errorf("failed to create backup: %w", err)
+	}
+
+	// Unmarshal v4 data (same struct, content fields are inline)
+	var store TaskStore
+	if err := json.Unmarshal(data, &store); err != nil {
+		return nil, fmt.Errorf("failed to parse tasks file: %w", err)
+	}
+
+	// Create context directory if it doesn't exist
+	contextPath := filepath.Join(s.rootDir, LimboDir, ContextDirName)
+	if err := os.MkdirAll(contextPath, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create context directory: %w", err)
+	}
+
+	// For each task, extract content to context files and strip from index
+	for i := range store.Tasks {
+		sections := extractContext(&store.Tasks[i])
+		if len(sections) > 0 {
+			if err := s.WriteContext(store.Tasks[i].ID, sections); err != nil {
+				return nil, fmt.Errorf("failed to write context for task %s: %w", store.Tasks[i].ID, err)
+			}
+		}
+
+		// Strip content fields from the index
+		store.Tasks[i].Description = ""
+		store.Tasks[i].Action = ""
+		store.Tasks[i].Verify = ""
+		store.Tasks[i].Result = ""
+		store.Tasks[i].Outcome = ""
+		store.Tasks[i].Notes = nil
+	}
+
+	// Bump version
+	store.Version = "5.0.0"
+
+	// Save the stripped store
 	if err := s.saveStore(&store); err != nil {
 		return nil, fmt.Errorf("failed to save migrated store: %w", err)
 	}
