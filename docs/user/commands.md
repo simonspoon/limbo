@@ -60,9 +60,9 @@ limbo add <name> [flags]
 
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
-| `--action` | | *(required)* | What concrete work to perform |
-| `--verify` | | *(required)* | How to confirm the action succeeded |
-| `--result` | | *(required)* | Template for what to report back |
+| `--action` | | `""` | What concrete work to perform |
+| `--verify` | | `""` | How to confirm the action succeeded |
+| `--result` | | `""` | Template for what to report back |
 | `--description` | `-d` | `""` | Task description |
 | `--parent` | | `""` | Parent task ID |
 | `--pretty` | | `false` | Human-readable output |
@@ -77,7 +77,6 @@ abcd
 
 **Constraints and errors**
 
-- `--action`, `--verify`, and `--result` are required.
 - `--parent` must refer to an existing task.
 - Cannot add a child to a task with status `done`.
 

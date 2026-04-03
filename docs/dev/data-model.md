@@ -40,9 +40,9 @@ type Task struct {
 | `ID` | `string` | `"id"` | 4-character lowercase alphabetic string (e.g. `"abcd"`). Generated via `crypto/rand`. User input is normalized to lowercase via `NormalizeTaskID`. |
 | `Name` | `string` | `"name"` | Task title. Required. |
 | `Description` | `string` | `"description,omitempty"` | Optional free-text details. Omitted from JSON when empty. |
-| `Action` | `string` | `"action,omitempty"` | What concrete work to perform. Required at task creation (v4+). Omitted from JSON when empty. |
-| `Verify` | `string` | `"verify,omitempty"` | How to confirm the action succeeded. Required at task creation (v4+). Omitted from JSON when empty. |
-| `Result` | `string` | `"result,omitempty"` | Template for what to report back when done. Required at task creation (v4+). Omitted from JSON when empty. |
+| `Action` | `string` | `"action,omitempty"` | What concrete work to perform. Optional. Omitted from JSON when empty. |
+| `Verify` | `string` | `"verify,omitempty"` | How to confirm the action succeeded. Optional. Omitted from JSON when empty. |
+| `Result` | `string` | `"result,omitempty"` | Template for what to report back when done. Optional. Omitted from JSON when empty. |
 | `Outcome` | `string` | `"outcome,omitempty"` | Actual result reported when a structured task is marked `done`. Set via `limbo status --outcome`. Omitted from JSON when empty. |
 | `Parent` | `*string` | `"parent"` | Pointer to the parent task's ID. `null` in JSON means the task is a root task. Always present in JSON (not omitempty). |
 | `Status` | `string` | `"status"` | Lifecycle state. One of `"todo"`, `"in-progress"`, `"done"`. |
@@ -58,7 +58,7 @@ type Task struct {
 func (t *Task) HasStructuredFields() bool
 ```
 
-Returns `true` when `Action`, `Verify`, and `Result` are all non-empty. Used to distinguish v4 structured tasks from legacy (pre-v4) tasks that predate these fields.
+Returns `true` when `Action`, `Verify`, and `Result` are all non-empty. Used to distinguish structured tasks from unstructured ones (e.g., quick tasks added without workflow metadata).
 
 ---
 

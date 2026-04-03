@@ -249,7 +249,7 @@ func TestAddCommandInvalidParentID(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid parent task ID")
 }
 
-func TestAddCommand_RequiresStructuredFlags(t *testing.T) {
+func TestAddCommand_WithoutStructuredFlags(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
@@ -261,9 +261,23 @@ func TestAddCommand_RequiresStructuredFlags(t *testing.T) {
 	addVerify = ""
 	addResult = ""
 
-	// Execute via cobra (not runAdd directly) to trigger required flag validation
-	rootCmd.SetArgs([]string{"add", "Test Task"})
-	err := rootCmd.Execute()
-	assert.Error(t, err)
-	// Cobra reports missing required flags
+	// Adding a task without structured flags should succeed
+	err := runAdd(nil, []string{"Quick Task"})
+	require.NoError(t, err)
+
+	// Verify task was created with empty structured fields
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	tasks, err := store.LoadAll()
+	require.NoError(t, err)
+	assert.Len(t, tasks, 1)
+
+	task := tasks[0]
+	assert.Equal(t, "Quick Task", task.Name)
+	assert.Equal(t, models.StatusTodo, task.Status)
+	assert.Empty(t, task.Action)
+	assert.Empty(t, task.Verify)
+	assert.Empty(t, task.Result)
+	assert.False(t, task.HasStructuredFields())
 }

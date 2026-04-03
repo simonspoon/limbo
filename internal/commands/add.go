@@ -33,15 +33,6 @@ func init() {
 	addCmd.Flags().StringVar(&addAction, "action", "", "What concrete work to perform")
 	addCmd.Flags().StringVar(&addVerify, "verify", "", "How to confirm the action succeeded")
 	addCmd.Flags().StringVar(&addResult, "result", "", "Template for what to report back")
-	if err := addCmd.MarkFlagRequired("action"); err != nil {
-		panic(err)
-	}
-	if err := addCmd.MarkFlagRequired("verify"); err != nil {
-		panic(err)
-	}
-	if err := addCmd.MarkFlagRequired("result"); err != nil {
-		panic(err)
-	}
 }
 
 func runAdd(cmd *cobra.Command, args []string) error {

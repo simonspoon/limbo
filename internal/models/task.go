@@ -36,7 +36,7 @@ const (
 	StatusDone       = "done"
 )
 
-// HasStructuredFields returns true when all three required structured fields are non-empty.
+// HasStructuredFields returns true when all three structured fields are non-empty.
 // Used to distinguish legacy (pre-v4) tasks from structured tasks.
 func (t *Task) HasStructuredFields() bool {
 	return t.Action != "" && t.Verify != "" && t.Result != ""

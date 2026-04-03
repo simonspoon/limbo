@@ -32,7 +32,8 @@ go build -o limbo ./cmd/limbo
 # Initialize limbo in your project
 limbo init
 
-# Add tasks (--action, --verify, --result are required)
+# Add tasks (simple or structured)
+limbo add "Fix login bug"
 limbo add "Implement user authentication" \
   --action "Build JWT login and token refresh" \
   --verify "go test ./... passes" \
@@ -63,7 +64,7 @@ limbo watch --pretty
 | Command | Description |
 |---------|-------------|
 | `init` | Initialize limbo in the current directory |
-| `add <name>` | Add a new task (`--action`, `--verify`, `--result` required; `--parent`, `--description`/`-d`) |
+| `add <name>` | Add a new task (`--action`, `--verify`, `--result`, `--parent`, `--description`/`-d` all optional) |
 | `edit <id>` | Edit a task's fields (`--name`, `--description`/`-d`, `--action`, `--verify`, `--result`) |
 | `list` | List all tasks |
 | `tree` | Display tasks in a tree structure (`--show-all`) |
