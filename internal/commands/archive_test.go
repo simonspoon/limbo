@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -408,6 +409,60 @@ func TestArchivePurge_PrettyEmpty(t *testing.T) {
 	archivePurgePretty = true
 	err := runArchivePurge(nil, nil)
 	require.NoError(t, err)
+}
+
+// --- context directory handling ---
+
+func TestArchiveRestore_CreatesContextDir(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	now := time.Now()
+
+	// Create a done task with content
+	task := &models.Task{
+		ID:          "aaaa",
+		Name:        "Task With Content",
+		Description: "Detailed description",
+		Action:      "Do something",
+		Verify:      "Verify it works",
+		Status:      models.StatusDone,
+		Created:     now,
+		Updated:     now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	// Verify context dir exists
+	contextDir := store.ContextDir("aaaa")
+	_, err = os.Stat(contextDir)
+	require.NoError(t, err, "context dir should exist after save")
+
+	// Prune to archive (this also cleans up context dir)
+	prunePretty = false
+	require.NoError(t, runPrune(nil, nil))
+
+	// Verify context dir is gone after prune
+	_, err = os.Stat(contextDir)
+	require.True(t, os.IsNotExist(err), "context dir should be gone after prune")
+
+	// Restore from archive
+	archiveRestorePretty = false
+	err = runArchiveRestore(nil, []string{"aaaa"})
+	require.NoError(t, err)
+
+	// Verify context dir is recreated
+	_, err = os.Stat(contextDir)
+	assert.NoError(t, err, "context dir should be recreated after restore")
+
+	// Verify content is accessible via LoadTask
+	restored, err := store.LoadTask("aaaa")
+	require.NoError(t, err)
+	assert.Equal(t, "Detailed description", restored.Description)
+	assert.Equal(t, "Do something", restored.Action)
+	assert.Equal(t, "Verify it works", restored.Verify)
 }
 
 // --- full lifecycle ---

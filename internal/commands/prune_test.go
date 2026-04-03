@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -265,4 +266,91 @@ func TestPruneCommand_AccumulatesInArchive(t *testing.T) {
 	archived, err := store.LoadArchive()
 	require.NoError(t, err)
 	assert.Len(t, archived, 2)
+}
+
+func TestPruneCommand_CleansUpContextDirs(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	now := time.Now()
+
+	// Create two done tasks with content
+	task1 := &models.Task{
+		ID:          "aaaa",
+		Name:        "Done With Content 1",
+		Description: "Description one",
+		Action:      "Action one",
+		Status:      models.StatusDone,
+		Created:     now,
+		Updated:     now,
+	}
+	require.NoError(t, store.SaveTask(task1))
+
+	task2 := &models.Task{
+		ID:      "bbbb",
+		Name:    "Done With Content 2",
+		Action:  "Action two",
+		Verify:  "Verify two",
+		Status:  models.StatusDone,
+		Created: now,
+		Updated: now,
+	}
+	require.NoError(t, store.SaveTask(task2))
+
+	// Verify context dirs exist
+	_, err = os.Stat(store.ContextDir("aaaa"))
+	require.NoError(t, err, "context dir for aaaa should exist")
+	_, err = os.Stat(store.ContextDir("bbbb"))
+	require.NoError(t, err, "context dir for bbbb should exist")
+
+	prunePretty = false
+	err = runPrune(nil, nil)
+	require.NoError(t, err)
+
+	// Verify context dirs are cleaned up
+	_, err = os.Stat(store.ContextDir("aaaa"))
+	assert.True(t, os.IsNotExist(err), "context dir for aaaa should be removed after prune")
+	_, err = os.Stat(store.ContextDir("bbbb"))
+	assert.True(t, os.IsNotExist(err), "context dir for bbbb should be removed after prune")
+}
+
+func TestPruneCommand_ArchivesWithContent(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	now := time.Now()
+
+	// Create a done task with content fields
+	task := &models.Task{
+		ID:          "aaaa",
+		Name:        "Done With Content",
+		Description: "A detailed description",
+		Action:      "Do the thing",
+		Verify:      "Check the thing",
+		Result:      "Expected result",
+		Status:      models.StatusDone,
+		Created:     now,
+		Updated:     now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	prunePretty = false
+	err = runPrune(nil, nil)
+	require.NoError(t, err)
+
+	// Load from archive and verify content fields are preserved
+	archived, err := store.LoadArchive()
+	require.NoError(t, err)
+	require.Len(t, archived, 1)
+	assert.Equal(t, "aaaa", archived[0].ID)
+	assert.Equal(t, "A detailed description", archived[0].Description)
+	assert.Equal(t, "Do the thing", archived[0].Action)
+	assert.Equal(t, "Check the thing", archived[0].Verify)
+	assert.Equal(t, "Expected result", archived[0].Result)
 }

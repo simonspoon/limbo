@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -279,4 +280,41 @@ func TestDeleteCommand_PrettyOutput(t *testing.T) {
 	// Delete with pretty output
 	err = runDelete(nil, []string{task.ID})
 	require.NoError(t, err)
+}
+
+func TestDeleteCommand_CleansUpContextDir(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	now := time.Now()
+	task := &models.Task{
+		ID:          "aaaa",
+		Name:        "Task With Content",
+		Description: "A detailed description",
+		Action:      "Do something",
+		Verify:      "Check it worked",
+		Status:      models.StatusTodo,
+		Created:     now,
+		Updated:     now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	// Verify context directory was created
+	contextDir := store.ContextDir("aaaa")
+	_, err = os.Stat(contextDir)
+	require.NoError(t, err, "context directory should exist after save")
+
+	// Reset flag
+	deletePretty = false
+
+	// Delete the task
+	err = runDelete(nil, []string{task.ID})
+	require.NoError(t, err)
+
+	// Verify context directory is gone
+	_, err = os.Stat(contextDir)
+	assert.True(t, os.IsNotExist(err), "context directory should be removed after delete")
 }
