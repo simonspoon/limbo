@@ -288,7 +288,7 @@ func TestNextCommand_UnclaimedFlag(t *testing.T) {
 	task1 := &models.Task{
 		ID:      "aaaa",
 		Name:    "Owned Task",
-		Status:  models.StatusCaptured,
+		Status:  models.StatusReady,
 		Owner:   &owner,
 		Created: now,
 		Updated: now,
@@ -299,7 +299,7 @@ func TestNextCommand_UnclaimedFlag(t *testing.T) {
 	task2 := &models.Task{
 		ID:      "aaab",
 		Name:    "Unclaimed Task",
-		Status:  models.StatusCaptured,
+		Status:  models.StatusReady,
 		Created: now.Add(time.Millisecond),
 		Updated: now.Add(time.Millisecond),
 	}

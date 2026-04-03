@@ -220,15 +220,15 @@ func TestListTemplates_IncludesProjectLocal(t *testing.T) {
 	// Create project template
 	tmplDir := filepath.Join(tmpDir, ".limbo", "templates")
 	require.NoError(t, os.MkdirAll(tmplDir, 0755))
-	yaml := []byte(`name: custom
+	yamlContent := []byte(`name: custom
 description: A custom project template
 tasks:
   - name: "Step 1"
-    action: "Do step 1"
+    approach: "Do step 1"
     verify: "Check step 1"
     result: "Step 1 done"
 `)
-	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "custom.yaml"), yaml, 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "custom.yaml"), yamlContent, 0644))
 
 	templates, err := ListTemplates(tmpDir)
 	require.NoError(t, err)
@@ -248,20 +248,20 @@ func TestGetTemplate_ProjectLocalApply(t *testing.T) {
 	// Create project template
 	tmplDir := filepath.Join(tmpDir, ".limbo", "templates")
 	require.NoError(t, os.MkdirAll(tmplDir, 0755))
-	yaml := []byte(`name: custom
+	yamlContent := []byte(`name: custom
 description: A custom template
 tasks:
   - name: "Alpha"
-    action: "Do alpha"
+    approach: "Do alpha"
     verify: "Check alpha"
     result: "Alpha done"
   - name: "Beta"
-    action: "Do beta"
+    approach: "Do beta"
     verify: "Check beta"
     result: "Beta done"
     blocked_by: ["Alpha"]
 `)
-	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "custom.yaml"), yaml, 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "custom.yaml"), yamlContent, 0644))
 
 	tmpl, err := GetTemplate(tmpDir, "custom")
 	require.NoError(t, err)
@@ -290,15 +290,15 @@ func TestGetTemplate_ProjectOverridesBuiltin(t *testing.T) {
 	// Create project template that overrides bug-fix
 	tmplDir := filepath.Join(tmpDir, ".limbo", "templates")
 	require.NoError(t, os.MkdirAll(tmplDir, 0755))
-	yaml := []byte(`name: bug-fix
+	yamlContent := []byte(`name: bug-fix
 description: Custom bug-fix override
 tasks:
   - name: "Custom Step"
-    action: "Do custom"
+    approach: "Do custom"
     verify: "Check custom"
     result: "Custom done"
 `)
-	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "bug-fix.yaml"), yaml, 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "bug-fix.yaml"), yamlContent, 0644))
 
 	tmpl, err := GetTemplate(tmpDir, "bug-fix")
 	require.NoError(t, err)

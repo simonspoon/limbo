@@ -130,8 +130,23 @@ func printTaskDetails(task *models.Task, blockers, blocks []blockerInfo) {
 		white.Printf("Description: %s\n", task.Description)
 	}
 
+	if task.AcceptanceCriteria != "" {
+		white.Printf("Acceptance:  %s\n", task.AcceptanceCriteria)
+	}
+	if task.ScopeOut != "" {
+		white.Printf("Scope Out:   %s\n", task.ScopeOut)
+	}
 	if task.Approach != "" {
 		white.Printf("Approach:    %s\n", task.Approach)
+	}
+	if task.AffectedAreas != "" {
+		white.Printf("Affected:    %s\n", task.AffectedAreas)
+	}
+	if task.TestStrategy != "" {
+		white.Printf("Test Plan:   %s\n", task.TestStrategy)
+	}
+	if task.Risks != "" {
+		white.Printf("Risks:       %s\n", task.Risks)
 	}
 	if task.Verify != "" {
 		white.Printf("Verify:      %s\n", task.Verify)
@@ -139,12 +154,20 @@ func printTaskDetails(task *models.Task, blockers, blocks []blockerInfo) {
 	if task.Result != "" {
 		white.Printf("Result:      %s\n", task.Result)
 	}
+	if task.Report != "" {
+		white.Printf("Report:      %s\n", task.Report)
+	}
 	if task.Outcome != "" {
 		green := color.New(color.FgGreen)
 		green.Printf("Outcome:     %s\n", task.Outcome)
 	}
 
 	white.Printf("Status:      %s\n", task.Status)
+
+	if task.ManualBlockReason != "" {
+		red := color.New(color.FgRed, color.Bold)
+		red.Printf("BLOCKED:     %s\n", task.ManualBlockReason)
+	}
 
 	if task.Parent != nil {
 		white.Printf("Parent:      %s\n", *task.Parent)
@@ -174,6 +197,23 @@ func printTaskDetails(task *models.Task, blockers, blocks []blockerInfo) {
 
 	gray.Printf("Created:     %s\n", task.Created.Format("2006-01-02 15:04:05"))
 	gray.Printf("Updated:     %s\n", task.Updated.Format("2006-01-02 15:04:05"))
+
+	if len(task.History) > 0 {
+		fmt.Println()
+		yellow.Println("History:")
+		for _, entry := range task.History {
+			byStr := ""
+			if entry.By != "" {
+				byStr = fmt.Sprintf(" (by: %s)", entry.By)
+			}
+			gray.Printf("  [%s] ", entry.At.Format("2006-01-02 15:04"))
+			white.Printf("%s → %s%s", entry.From, entry.To, byStr)
+			if entry.Reason != "" {
+				gray.Printf(" — %s", entry.Reason)
+			}
+			fmt.Println()
+		}
+	}
 
 	if len(task.Notes) > 0 {
 		fmt.Println()

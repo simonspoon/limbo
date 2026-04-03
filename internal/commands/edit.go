@@ -12,12 +12,19 @@ import (
 )
 
 var (
-	editName        string
-	editDescription string
-	editApproach    string
-	editVerify      string
-	editResult      string
-	editPretty      bool
+	editName               string
+	editDescription        string
+	editApproach           string
+	editAction             string
+	editVerify             string
+	editResult             string
+	editAcceptanceCriteria string
+	editScopeOut           string
+	editAffectedAreas      string
+	editTestStrategy       string
+	editRisks              string
+	editReport             string
+	editPretty             bool
 )
 
 var editCmd = &cobra.Command{
@@ -31,10 +38,18 @@ var editCmd = &cobra.Command{
 func init() {
 	editCmd.Flags().StringVar(&editName, "name", "", "Task name")
 	editCmd.Flags().StringVarP(&editDescription, "description", "d", "", "Task description")
-	editCmd.Flags().StringVar(&editApproach, "action", "", "What concrete work to perform")
+	editCmd.Flags().StringVar(&editApproach, "approach", "", "What concrete work to perform")
+	editCmd.Flags().StringVar(&editAction, "action", "", "What concrete work to perform (alias for --approach)")
 	editCmd.Flags().StringVar(&editVerify, "verify", "", "How to confirm the action succeeded")
 	editCmd.Flags().StringVar(&editResult, "result", "", "Template for what to report back")
+	editCmd.Flags().StringVar(&editAcceptanceCriteria, "acceptance-criteria", "", "Criteria for acceptance")
+	editCmd.Flags().StringVar(&editScopeOut, "scope-out", "", "What is explicitly out of scope")
+	editCmd.Flags().StringVar(&editAffectedAreas, "affected-areas", "", "Areas of the codebase affected")
+	editCmd.Flags().StringVar(&editTestStrategy, "test-strategy", "", "How to test the changes")
+	editCmd.Flags().StringVar(&editRisks, "risks", "", "Known risks and mitigations")
+	editCmd.Flags().StringVar(&editReport, "report", "", "Completion report")
 	editCmd.Flags().BoolVar(&editPretty, "pretty", false, "Pretty print output")
+	_ = editCmd.Flags().MarkHidden("action")
 }
 
 // applyEditFlags applies changed flags to the task. Returns true if any field was changed.
@@ -48,8 +63,11 @@ func applyEditFlags(cmd *cobra.Command, task *models.Task) bool {
 		task.Description = editDescription
 		changed = true
 	}
-	if cmd.Flags().Changed("action") {
+	if cmd.Flags().Changed("approach") {
 		task.Approach = editApproach
+		changed = true
+	} else if cmd.Flags().Changed("action") {
+		task.Approach = editAction
 		changed = true
 	}
 	if cmd.Flags().Changed("verify") {
@@ -58,6 +76,30 @@ func applyEditFlags(cmd *cobra.Command, task *models.Task) bool {
 	}
 	if cmd.Flags().Changed("result") {
 		task.Result = editResult
+		changed = true
+	}
+	if cmd.Flags().Changed("acceptance-criteria") {
+		task.AcceptanceCriteria = editAcceptanceCriteria
+		changed = true
+	}
+	if cmd.Flags().Changed("scope-out") {
+		task.ScopeOut = editScopeOut
+		changed = true
+	}
+	if cmd.Flags().Changed("affected-areas") {
+		task.AffectedAreas = editAffectedAreas
+		changed = true
+	}
+	if cmd.Flags().Changed("test-strategy") {
+		task.TestStrategy = editTestStrategy
+		changed = true
+	}
+	if cmd.Flags().Changed("risks") {
+		task.Risks = editRisks
+		changed = true
+	}
+	if cmd.Flags().Changed("report") {
+		task.Report = editReport
 		changed = true
 	}
 	return changed
@@ -83,7 +125,7 @@ func runEdit(cmd *cobra.Command, args []string) error {
 	}
 
 	if !applyEditFlags(cmd, task) {
-		return fmt.Errorf("nothing to edit: specify at least one flag (--name, --description, --action, --verify, --result)")
+		return fmt.Errorf("nothing to edit: specify at least one flag (--name, --description, --approach, --verify, --result, --acceptance-criteria, --scope-out, --affected-areas, --test-strategy, --risks, --report)")
 	}
 
 	task.Updated = time.Now()

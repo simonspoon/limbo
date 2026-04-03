@@ -2,21 +2,21 @@ name: feature
 description: Design, implement, test, and review a new feature
 tasks:
   - name: "Design"
-    action: "Research requirements and design the approach"
+    approach: "Research requirements and design the approach"
     verify: "Design documented with acceptance criteria"
     result: "Design document"
   - name: "Implement"
-    action: "Write the code per the design"
+    approach: "Write the code per the design"
     verify: "Code builds and matches design"
     result: "List of files changed"
     blocked_by: ["Design"]
   - name: "Test"
-    action: "Write and run tests for the implementation"
+    approach: "Write and run tests for the implementation"
     verify: "All tests pass"
     result: "Test results and coverage"
     blocked_by: ["Implement"]
   - name: "Review"
-    action: "Review code for correctness and conventions"
+    approach: "Review code for correctness and conventions"
     verify: "Review verdict is APPROVE"
     result: "Review output"
     blocked_by: ["Test"]

@@ -6,6 +6,7 @@ import (
 
 	"github.com/simonspoon/limbo/internal/models"
 	"github.com/simonspoon/limbo/internal/storage"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -202,6 +203,80 @@ func TestTreeCommand_JSONOutput(t *testing.T) {
 
 	// Test JSON output
 	treePretty = false
+
+	err = runTree(nil, []string{})
+	require.NoError(t, err)
+}
+
+func TestFormatStatus_AllStatuses(t *testing.T) {
+	tests := []struct {
+		status   string
+		expected string
+	}{
+		{models.StatusCaptured, "CAPTURED"},
+		{models.StatusRefined, "REFINED"},
+		{models.StatusPlanned, "PLANNED"},
+		{models.StatusReady, "READY"},
+		{models.StatusInProgress, "IN-PROG"},
+		{models.StatusInReview, "REVIEW"},
+		{models.StatusDone, "DONE"},
+		{"unknown", "UNKNOWN"},
+	}
+
+	for _, tt := range tests {
+		assert.Equal(t, tt.expected, formatStatus(tt.status), "formatStatus(%q)", tt.status)
+	}
+}
+
+func TestGetStatusColor_AllStatuses(t *testing.T) {
+	// Verify all 7 statuses return non-nil color and unknown also works
+	statuses := []string{
+		models.StatusCaptured,
+		models.StatusRefined,
+		models.StatusPlanned,
+		models.StatusReady,
+		models.StatusInProgress,
+		models.StatusInReview,
+		models.StatusDone,
+		"unknown",
+	}
+	for _, s := range statuses {
+		c := getStatusColor(s)
+		assert.NotNil(t, c, "getStatusColor(%q) should return non-nil", s)
+	}
+}
+
+func TestTreeCommand_AllStatuses(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	now := time.Now()
+	statuses := []string{
+		models.StatusCaptured,
+		models.StatusRefined,
+		models.StatusPlanned,
+		models.StatusReady,
+		models.StatusInProgress,
+		models.StatusInReview,
+		models.StatusDone,
+	}
+	ids := []string{"aaaa", "aaab", "aaac", "aaad", "aaae", "aaaf", "aaag"}
+	for i, id := range ids {
+		task := &models.Task{
+			ID:      id,
+			Name:    "Task " + statuses[i],
+			Status:  statuses[i],
+			Created: now.Add(time.Duration(i) * time.Millisecond),
+			Updated: now.Add(time.Duration(i) * time.Millisecond),
+		}
+		require.NoError(t, store.SaveTask(task))
+	}
+
+	treePretty = true
+	treeShowAll = true
 
 	err = runTree(nil, []string{})
 	require.NoError(t, err)

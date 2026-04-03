@@ -251,7 +251,7 @@ func TestNextCommand_SkipsBlockedTasks(t *testing.T) {
 	blocker := &models.Task{
 		ID:      "aaaa",
 		Name:    "Blocker Task",
-		Status:  models.StatusCaptured,
+		Status:  models.StatusReady,
 		Created: now,
 		Updated: now,
 	}
@@ -260,7 +260,7 @@ func TestNextCommand_SkipsBlockedTasks(t *testing.T) {
 	blocked := &models.Task{
 		ID:        "aaab",
 		Name:      "Blocked Task",
-		Status:    models.StatusCaptured,
+		Status:    models.StatusReady,
 		BlockedBy: []string{blocker.ID},
 		Created:   now.Add(time.Millisecond),
 		Updated:   now.Add(time.Millisecond),

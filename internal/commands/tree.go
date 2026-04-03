@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/simonspoon/limbo/internal/models"
@@ -143,8 +144,16 @@ func getStatusColor(status string) *color.Color {
 	switch status {
 	case models.StatusCaptured:
 		return color.New(color.FgCyan)
+	case models.StatusRefined:
+		return color.New(color.FgBlue)
+	case models.StatusPlanned:
+		return color.New(color.FgMagenta)
+	case models.StatusReady:
+		return color.New(color.FgWhite, color.Bold)
 	case models.StatusInProgress:
 		return color.New(color.FgYellow)
+	case models.StatusInReview:
+		return color.New(color.FgHiYellow)
 	case models.StatusDone:
 		return color.New(color.FgGreen)
 	default:
@@ -154,13 +163,21 @@ func getStatusColor(status string) *color.Color {
 
 func formatStatus(status string) string {
 	switch status {
+	case models.StatusCaptured:
+		return "CAPTURED"
+	case models.StatusRefined:
+		return "REFINED"
+	case models.StatusPlanned:
+		return "PLANNED"
+	case models.StatusReady:
+		return "READY"
 	case models.StatusInProgress:
 		return "IN-PROG"
+	case models.StatusInReview:
+		return "REVIEW"
 	case models.StatusDone:
 		return "DONE"
-	case models.StatusCaptured:
-		return "TODO"
 	default:
-		return status
+		return strings.ToUpper(status)
 	}
 }

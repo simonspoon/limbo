@@ -267,7 +267,7 @@ func TestGetNextTask(t *testing.T) {
 	task1 := &models.Task{
 		ID:      "aaaa",
 		Name:    "First Task",
-		Status:  models.StatusCaptured,
+		Status:  models.StatusReady,
 		Created: baseTime,
 		Updated: baseTime,
 	}
@@ -277,7 +277,7 @@ func TestGetNextTask(t *testing.T) {
 	task2 := &models.Task{
 		ID:      "aaab",
 		Name:    "Second Task",
-		Status:  models.StatusCaptured,
+		Status:  models.StatusReady,
 		Created: time.Now(),
 		Updated: time.Now(),
 	}
@@ -340,12 +340,12 @@ func TestGetNextTask_DepthFirst(t *testing.T) {
 	}
 	require.NoError(t, store.SaveTask(a1))
 
-	// Create A2 (todo, child of A)
+	// Create A2 (ready, child of A)
 	a2 := &models.Task{
 		ID:      "aaac",
 		Name:    "A2",
 		Parent:  &featureAID,
-		Status:  models.StatusCaptured,
+		Status:  models.StatusReady,
 		Created: baseTime.Add(2 * time.Millisecond),
 		Updated: baseTime.Add(2 * time.Millisecond),
 	}
@@ -362,23 +362,23 @@ func TestGetNextTask_DepthFirst(t *testing.T) {
 	}
 	require.NoError(t, store.SaveTask(a1a))
 
-	// Create A1b (todo, child of A1) - this should be returned
+	// Create A1b (ready, child of A1) - this should be returned
 	a1b := &models.Task{
 		ID:      "aabb",
 		Name:    "A1b",
 		Parent:  &a1ID,
-		Status:  models.StatusCaptured,
+		Status:  models.StatusReady,
 		Created: baseTime.Add(11 * time.Millisecond),
 		Updated: baseTime.Add(11 * time.Millisecond),
 	}
 	require.NoError(t, store.SaveTask(a1b))
 
-	// Create A1c (todo, child of A1)
+	// Create A1c (ready, child of A1)
 	a1c := &models.Task{
 		ID:      "aabc",
 		Name:    "A1c",
 		Parent:  &a1ID,
-		Status:  models.StatusCaptured,
+		Status:  models.StatusReady,
 		Created: baseTime.Add(12 * time.Millisecond),
 		Updated: baseTime.Add(12 * time.Millisecond),
 	}
@@ -461,11 +461,11 @@ func TestGetNextTask_WalksUpToRoot(t *testing.T) {
 	}
 	require.NoError(t, store.SaveTask(taskA))
 
-	// Root task B (todo) - sibling of A at root level
+	// Root task B (ready) - sibling of A at root level
 	taskB := &models.Task{
 		ID:      "aaab",
 		Name:    "Task B",
-		Status:  models.StatusCaptured,
+		Status:  models.StatusReady,
 		Created: now.Add(time.Millisecond),
 		Updated: now.Add(time.Millisecond),
 	}

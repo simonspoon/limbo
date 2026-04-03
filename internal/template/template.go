@@ -29,12 +29,18 @@ type Template struct {
 
 // TaskTemplate represents a single task within a template.
 type TaskTemplate struct {
-	Name      string         `yaml:"name"`
-	Approach  string         `yaml:"action"`
-	Verify    string         `yaml:"verify"`
-	Result    string         `yaml:"result"`
-	BlockedBy []string       `yaml:"blocked_by,omitempty"`
-	Children  []TaskTemplate `yaml:"children,omitempty"`
+	Name               string         `yaml:"name"`
+	Approach           string         `yaml:"approach"`
+	Verify             string         `yaml:"verify"`
+	Result             string         `yaml:"result"`
+	AcceptanceCriteria string         `yaml:"acceptance_criteria,omitempty"`
+	ScopeOut           string         `yaml:"scope_out,omitempty"`
+	AffectedAreas      string         `yaml:"affected_areas,omitempty"`
+	TestStrategy       string         `yaml:"test_strategy,omitempty"`
+	Risks              string         `yaml:"risks,omitempty"`
+	Report             string         `yaml:"report,omitempty"`
+	BlockedBy          []string       `yaml:"blocked_by,omitempty"`
+	Children           []TaskTemplate `yaml:"children,omitempty"`
 }
 
 // ApplyResult holds the outcome of applying a template.
@@ -210,15 +216,21 @@ func createTasks(store *storage.Storage, tasks []TaskTemplate, parentID string, 
 
 		now := time.Now()
 		task := &models.Task{
-			ID:       taskID,
-			Name:     tt.Name,
-			Approach: tt.Approach,
-			Verify:   tt.Verify,
-			Result:   tt.Result,
-			Parent:   parent,
-			Status:   models.StatusCaptured,
-			Created:  now,
-			Updated:  now,
+			ID:                 taskID,
+			Name:               tt.Name,
+			Approach:           tt.Approach,
+			Verify:             tt.Verify,
+			Result:             tt.Result,
+			AcceptanceCriteria: tt.AcceptanceCriteria,
+			ScopeOut:           tt.ScopeOut,
+			AffectedAreas:      tt.AffectedAreas,
+			TestStrategy:       tt.TestStrategy,
+			Risks:              tt.Risks,
+			Report:             tt.Report,
+			Parent:             parent,
+			Status:             models.StatusCaptured,
+			Created:            now,
+			Updated:            now,
 		}
 
 		if err := store.SaveTask(task); err != nil {

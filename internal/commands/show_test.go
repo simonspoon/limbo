@@ -275,3 +275,82 @@ func TestShowCommandNotInProject(t *testing.T) {
 	err = runShow(nil, []string{"aaaa"})
 	assert.Error(t, err)
 }
+
+func TestShowCommand_NewMetadataFieldsPretty(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	now := time.Now()
+	task := &models.Task{
+		ID:                 "aaaa",
+		Name:               "Full Fields Task",
+		Status:             models.StatusPlanned,
+		AcceptanceCriteria: "all tests pass",
+		ScopeOut:           "not edge case X",
+		Approach:           "implement via API",
+		AffectedAreas:      "internal/commands",
+		TestStrategy:       "unit + integration",
+		Risks:              "backward compat",
+		Verify:             "run test suite",
+		Result:             "test results",
+		Report:             "summary of changes",
+		Created:            now,
+		Updated:            now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	showPretty = true
+	err = runShow(nil, []string{task.ID})
+	require.NoError(t, err)
+}
+
+func TestShowCommand_HistoryDisplayed(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	now := time.Now()
+	task := &models.Task{
+		ID:     "aaaa",
+		Name:   "Task With History",
+		Status: models.StatusRefined,
+		History: []models.HistoryEntry{
+			{From: "captured", To: "refined", By: "pm", At: now, Reason: ""},
+		},
+		Created: now,
+		Updated: now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	showPretty = true
+	err = runShow(nil, []string{task.ID})
+	require.NoError(t, err)
+}
+
+func TestShowCommand_ManualBlockReason(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	now := time.Now()
+	task := &models.Task{
+		ID:                "aaaa",
+		Name:              "Blocked Task",
+		Status:            models.StatusPlanned,
+		ManualBlockReason: "waiting on design review",
+		Created:           now,
+		Updated:           now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	showPretty = true
+	err = runShow(nil, []string{task.ID})
+	require.NoError(t, err)
+}

@@ -34,14 +34,28 @@ func setupTestEnv(t *testing.T) (string, func()) {
 	return tmpDir, cleanup
 }
 
+func resetAddFlags() {
+	addDescription = ""
+	addParent = ""
+	addPretty = false
+	addApproach = ""
+	addAction = ""
+	addVerify = ""
+	addResult = ""
+	addAcceptanceCriteria = ""
+	addScopeOut = ""
+	addAffectedAreas = ""
+	addTestStrategy = ""
+	addRisks = ""
+	addReport = ""
+}
+
 func TestAddCommand(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
 	// Reset flags
-	addDescription = ""
-	addParent = ""
-	addPretty = false
+	resetAddFlags()
 	addApproach = "do something"
 	addVerify = "check something"
 	addResult = "report something"
@@ -69,10 +83,8 @@ func TestAddCommandWithDescription(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	// Set flags
+	resetAddFlags()
 	addDescription = "Test description"
-	addParent = ""
-	addPretty = false
 	addApproach = "do something"
 	addVerify = "check something"
 	addResult = "report something"
@@ -99,9 +111,7 @@ func TestAddCommandWithParent(t *testing.T) {
 	defer cleanup()
 
 	// Create parent task
-	addDescription = ""
-	addParent = ""
-	addPretty = false
+	resetAddFlags()
 	addApproach = "do something"
 	addVerify = "check something"
 	addResult = "report something"
@@ -146,10 +156,8 @@ func TestAddCommandNonExistentParent(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	// Set non-existent parent
+	resetAddFlags()
 	addParent = "zzzz"
-	addDescription = ""
-	addPretty = false
 	addApproach = "do something"
 	addVerify = "check something"
 	addResult = "report something"
@@ -172,10 +180,7 @@ func TestAddCommandNotInProject(t *testing.T) {
 
 	require.NoError(t, os.Chdir(tmpDir))
 
-	// Reset flags
-	addDescription = ""
-	addParent = ""
-	addPretty = false
+	resetAddFlags()
 	addApproach = "do something"
 	addVerify = "check something"
 	addResult = "report something"
@@ -189,8 +194,7 @@ func TestAddCommandPrettyOutput(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	addDescription = ""
-	addParent = ""
+	resetAddFlags()
 	addPretty = true
 	addApproach = "do something"
 	addVerify = "check something"
@@ -219,9 +223,8 @@ func TestAddCommandToDoneParent(t *testing.T) {
 	require.NoError(t, store.SaveTask(parent))
 
 	// Try to add child to done parent
-	addDescription = ""
+	resetAddFlags()
 	addParent = parent.ID
-	addPretty = false
 	addApproach = "do something"
 	addVerify = "check something"
 	addResult = "report something"
@@ -235,10 +238,8 @@ func TestAddCommandInvalidParentID(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	// Set invalid parent ID format
+	resetAddFlags()
 	addParent = "invalid"
-	addDescription = ""
-	addPretty = false
 	addApproach = "do something"
 	addVerify = "check something"
 	addResult = "report something"
@@ -253,13 +254,7 @@ func TestAddCommand_WithoutStructuredFlags(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	// Reset all flags
-	addDescription = ""
-	addParent = ""
-	addPretty = false
-	addApproach = ""
-	addVerify = ""
-	addResult = ""
+	resetAddFlags()
 
 	// Adding a task without structured flags should succeed
 	err := runAdd(nil, []string{"Quick Task"})
@@ -280,4 +275,93 @@ func TestAddCommand_WithoutStructuredFlags(t *testing.T) {
 	assert.Empty(t, task.Verify)
 	assert.Empty(t, task.Result)
 	assert.False(t, task.HasStructuredFields())
+}
+
+func TestAddCommand_ApproachFlag(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	resetAddFlags()
+	addApproach = "implement the feature"
+
+	err := runAdd(nil, []string{"Approach Task"})
+	require.NoError(t, err)
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	tasks, err := store.LoadAll()
+	require.NoError(t, err)
+	assert.Len(t, tasks, 1)
+	assert.Equal(t, "implement the feature", tasks[0].Approach)
+}
+
+func TestAddCommand_ActionAliasForApproach(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	resetAddFlags()
+	addAction = "do the thing via action"
+
+	err := runAdd(nil, []string{"Action Alias Task"})
+	require.NoError(t, err)
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	tasks, err := store.LoadAll()
+	require.NoError(t, err)
+	assert.Len(t, tasks, 1)
+	assert.Equal(t, "do the thing via action", tasks[0].Approach)
+}
+
+func TestAddCommand_ApproachWinsOverAction(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	resetAddFlags()
+	addApproach = "approach wins"
+	addAction = "action loses"
+
+	err := runAdd(nil, []string{"Approach Wins Task"})
+	require.NoError(t, err)
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	tasks, err := store.LoadAll()
+	require.NoError(t, err)
+	assert.Len(t, tasks, 1)
+	assert.Equal(t, "approach wins", tasks[0].Approach)
+}
+
+func TestAddCommand_NewMetadataFields(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	resetAddFlags()
+	addAcceptanceCriteria = "must pass all tests"
+	addScopeOut = "not handling edge case X"
+	addAffectedAreas = "internal/commands"
+	addTestStrategy = "unit tests + integration"
+	addRisks = "might break backward compat"
+	addReport = "changes summary"
+
+	err := runAdd(nil, []string{"Full Metadata Task"})
+	require.NoError(t, err)
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	tasks, err := store.LoadAll()
+	require.NoError(t, err)
+	assert.Len(t, tasks, 1)
+
+	task := tasks[0]
+	assert.Equal(t, "must pass all tests", task.AcceptanceCriteria)
+	assert.Equal(t, "not handling edge case X", task.ScopeOut)
+	assert.Equal(t, "internal/commands", task.AffectedAreas)
+	assert.Equal(t, "unit tests + integration", task.TestStrategy)
+	assert.Equal(t, "might break backward compat", task.Risks)
+	assert.Equal(t, "changes summary", task.Report)
 }

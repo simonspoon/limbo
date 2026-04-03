@@ -80,7 +80,7 @@ func validateListFlags() error {
 		return fmt.Errorf("--blocked and --unblocked are mutually exclusive")
 	}
 	if listStatus != "" && !models.IsValidStatus(listStatus) {
-		return fmt.Errorf("invalid status %q. Must be: todo, in-progress, done", listStatus)
+		return fmt.Errorf("invalid status %q. Must be: captured, refined, planned, ready, in-progress, in-review, done", listStatus)
 	}
 	return nil
 }
@@ -174,14 +174,22 @@ func printTasksPretty(tasks []models.Task) {
 	// Status order
 	statuses := []string{
 		models.StatusCaptured,
+		models.StatusRefined,
+		models.StatusPlanned,
+		models.StatusReady,
 		models.StatusInProgress,
+		models.StatusInReview,
 		models.StatusDone,
 	}
 
 	// Colors
 	statusColors := map[string]*color.Color{
-		models.StatusCaptured:   color.New(color.FgWhite),
+		models.StatusCaptured:   color.New(color.FgCyan),
+		models.StatusRefined:    color.New(color.FgBlue),
+		models.StatusPlanned:    color.New(color.FgMagenta),
+		models.StatusReady:      color.New(color.FgWhite, color.Bold),
 		models.StatusInProgress: color.New(color.FgYellow),
+		models.StatusInReview:   color.New(color.FgHiYellow),
 		models.StatusDone:       color.New(color.FgGreen),
 	}
 

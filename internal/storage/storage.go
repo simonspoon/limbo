@@ -373,11 +373,11 @@ func getDeepestInProgress(tasks []models.Task) *models.Task {
 	return deepest
 }
 
-// getTodoChildren returns todo tasks that are children of the given task, sorted by created time
+// getTodoChildren returns ready tasks that are children of the given task, sorted by created time
 func getTodoChildren(tasks []models.Task, parentID string, skipBlocked bool) []models.Task {
 	var children []models.Task
 	for i := range tasks {
-		if tasks[i].Status == models.StatusCaptured && tasks[i].Parent != nil && *tasks[i].Parent == parentID {
+		if tasks[i].Status == models.StatusReady && tasks[i].Parent != nil && *tasks[i].Parent == parentID {
 			if skipBlocked && isTaskBlocked(&tasks[i], tasks) {
 				continue
 			}
@@ -401,10 +401,10 @@ func getTodoSiblings(tasks []models.Task, taskID string, skipBlocked bool) []mod
 		}
 	}
 
-	// Find all todo tasks with the same parent
+	// Find all ready tasks with the same parent
 	var siblings []models.Task
 	for i := range tasks {
-		if tasks[i].Status != models.StatusCaptured {
+		if tasks[i].Status != models.StatusReady {
 			continue
 		}
 		if skipBlocked && isTaskBlocked(&tasks[i], tasks) {
@@ -426,11 +426,11 @@ func getTodoSiblings(tasks []models.Task, taskID string, skipBlocked bool) []mod
 	return siblings
 }
 
-// getRootTodos returns all todo tasks with no parent, sorted by created time
+// getRootTodos returns all ready tasks with no parent, sorted by created time
 func getRootTodos(tasks []models.Task, skipBlocked bool) []models.Task {
 	var roots []models.Task
 	for i := range tasks {
-		if tasks[i].Status == models.StatusCaptured && tasks[i].Parent == nil {
+		if tasks[i].Status == models.StatusReady && tasks[i].Parent == nil {
 			if skipBlocked && isTaskBlocked(&tasks[i], tasks) {
 				continue
 			}
@@ -443,11 +443,11 @@ func getRootTodos(tasks []models.Task, skipBlocked bool) []models.Task {
 	return roots
 }
 
-// countBlockedTodos counts todo tasks that are blocked by incomplete dependencies
+// countBlockedTodos counts ready tasks that are blocked by incomplete dependencies
 func countBlockedTodos(tasks []models.Task) int {
 	count := 0
 	for i := range tasks {
-		if tasks[i].Status == models.StatusCaptured && isTaskBlocked(&tasks[i], tasks) {
+		if tasks[i].Status == models.StatusReady && isTaskBlocked(&tasks[i], tasks) {
 			count++
 		}
 	}

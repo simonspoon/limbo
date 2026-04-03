@@ -18,8 +18,15 @@ func executeEdit(args ...string) error {
 	editName = ""
 	editDescription = ""
 	editApproach = ""
+	editAction = ""
 	editVerify = ""
 	editResult = ""
+	editAcceptanceCriteria = ""
+	editScopeOut = ""
+	editAffectedAreas = ""
+	editTestStrategy = ""
+	editRisks = ""
+	editReport = ""
 	editPretty = false
 
 	// Create a fresh command with clean flag state
@@ -30,10 +37,18 @@ func executeEdit(args ...string) error {
 	}
 	cmd.Flags().StringVar(&editName, "name", "", "Task name")
 	cmd.Flags().StringVarP(&editDescription, "description", "d", "", "Task description")
-	cmd.Flags().StringVar(&editApproach, "action", "", "What concrete work to perform")
+	cmd.Flags().StringVar(&editApproach, "approach", "", "What concrete work to perform")
+	cmd.Flags().StringVar(&editAction, "action", "", "What concrete work to perform (alias for --approach)")
 	cmd.Flags().StringVar(&editVerify, "verify", "", "How to confirm the action succeeded")
 	cmd.Flags().StringVar(&editResult, "result", "", "Template for what to report back")
+	cmd.Flags().StringVar(&editAcceptanceCriteria, "acceptance-criteria", "", "Criteria for acceptance")
+	cmd.Flags().StringVar(&editScopeOut, "scope-out", "", "What is explicitly out of scope")
+	cmd.Flags().StringVar(&editAffectedAreas, "affected-areas", "", "Areas of the codebase affected")
+	cmd.Flags().StringVar(&editTestStrategy, "test-strategy", "", "How to test the changes")
+	cmd.Flags().StringVar(&editRisks, "risks", "", "Known risks and mitigations")
+	cmd.Flags().StringVar(&editReport, "report", "", "Completion report")
 	cmd.Flags().BoolVar(&editPretty, "pretty", false, "Pretty print output")
+	_ = cmd.Flags().MarkHidden("action")
 	cmd.SetArgs(args)
 	return cmd.Execute()
 }
@@ -307,4 +322,93 @@ func TestEditCommand_PreservesImmutableFields(t *testing.T) {
 	assert.Equal(t, "bbbb", *updated.Parent)
 	assert.Equal(t, []string{"cccc"}, updated.BlockedBy)
 	assert.Equal(t, now.Unix(), updated.Created.Unix())
+}
+
+func TestEditCommand_ApproachFlag(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	now := time.Now()
+	task := &models.Task{
+		ID:       "aaaa",
+		Name:     "Test Task",
+		Approach: "Old approach",
+		Status:   models.StatusCaptured,
+		Created:  now,
+		Updated:  now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	err = executeEdit("aaaa", "--approach", "New approach")
+	require.NoError(t, err)
+
+	updated, err := store.LoadTask("aaaa")
+	require.NoError(t, err)
+	assert.Equal(t, "New approach", updated.Approach)
+}
+
+func TestEditCommand_ActionAliasForApproach(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	now := time.Now()
+	task := &models.Task{
+		ID:       "aaaa",
+		Name:     "Test Task",
+		Approach: "Old approach",
+		Status:   models.StatusCaptured,
+		Created:  now,
+		Updated:  now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	err = executeEdit("aaaa", "--action", "Via action alias")
+	require.NoError(t, err)
+
+	updated, err := store.LoadTask("aaaa")
+	require.NoError(t, err)
+	assert.Equal(t, "Via action alias", updated.Approach)
+}
+
+func TestEditCommand_NewMetadataFields(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	now := time.Now()
+	task := &models.Task{
+		ID:      "aaaa",
+		Name:    "Test Task",
+		Status:  models.StatusCaptured,
+		Created: now,
+		Updated: now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	err = executeEdit("aaaa",
+		"--acceptance-criteria", "all tests pass",
+		"--scope-out", "not edge case X",
+		"--affected-areas", "internal/commands",
+		"--test-strategy", "unit + integration",
+		"--risks", "backward compat risk",
+		"--report", "summary of changes",
+	)
+	require.NoError(t, err)
+
+	updated, err := store.LoadTask("aaaa")
+	require.NoError(t, err)
+	assert.Equal(t, "all tests pass", updated.AcceptanceCriteria)
+	assert.Equal(t, "not edge case X", updated.ScopeOut)
+	assert.Equal(t, "internal/commands", updated.AffectedAreas)
+	assert.Equal(t, "unit + integration", updated.TestStrategy)
+	assert.Equal(t, "backward compat risk", updated.Risks)
+	assert.Equal(t, "summary of changes", updated.Report)
 }

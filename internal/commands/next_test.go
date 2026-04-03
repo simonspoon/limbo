@@ -31,7 +31,7 @@ func TestNextCommand_SingleTask(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Only Task",
-		Status:  models.StatusCaptured,
+		Status:  models.StatusReady,
 		Created: now,
 		Updated: now,
 	}
@@ -55,7 +55,7 @@ func TestNextCommand_ReturnsFIFO(t *testing.T) {
 	task1 := &models.Task{
 		ID:      "aaaa",
 		Name:    "Older Task",
-		Status:  models.StatusCaptured,
+		Status:  models.StatusReady,
 		Created: older,
 		Updated: older,
 	}
@@ -66,7 +66,7 @@ func TestNextCommand_ReturnsFIFO(t *testing.T) {
 	task2 := &models.Task{
 		ID:      "aaab",
 		Name:    "Newer Task",
-		Status:  models.StatusCaptured,
+		Status:  models.StatusReady,
 		Created: newer,
 		Updated: newer,
 	}
@@ -109,22 +109,22 @@ func TestNextCommand_SkipsNonTodoTasks(t *testing.T) {
 	}
 	require.NoError(t, store.SaveTask(inProgress))
 
-	// Create todo task (newest)
-	todoTask := &models.Task{
+	// Create ready task (newest)
+	readyTask := &models.Task{
 		ID:      "aaac",
-		Name:    "Todo Task",
-		Status:  models.StatusCaptured,
+		Name:    "Ready Task",
+		Status:  models.StatusReady,
 		Created: now.Add(2 * time.Millisecond),
 		Updated: now.Add(2 * time.Millisecond),
 	}
-	require.NoError(t, store.SaveTask(todoTask))
+	require.NoError(t, store.SaveTask(readyTask))
 
-	// Should return the todo task (sibling of in-progress task)
+	// Should return the ready task (sibling of in-progress task)
 	next, err := store.GetNextTask()
 	require.NoError(t, err)
 	require.NotNil(t, next)
 	require.NotNil(t, next.Task)
-	assert.Equal(t, "Todo Task", next.Task.Name)
+	assert.Equal(t, "Ready Task", next.Task.Name)
 }
 
 func TestNextCommand_ReportsBlockedCount(t *testing.T) {
@@ -146,12 +146,12 @@ func TestNextCommand_ReportsBlockedCount(t *testing.T) {
 	}
 	require.NoError(t, store.SaveTask(blocker))
 
-	// Create 3 blocked todo tasks
+	// Create 3 blocked ready tasks
 	for i, id := range []string{"aaab", "aaac", "aaad"} {
 		task := &models.Task{
 			ID:        id,
 			Name:      "Blocked Task",
-			Status:    models.StatusCaptured,
+			Status:    models.StatusReady,
 			BlockedBy: []string{"aaaa"},
 			Created:   now.Add(time.Duration(i+1) * time.Millisecond),
 			Updated:   now.Add(time.Duration(i+1) * time.Millisecond),
@@ -188,7 +188,7 @@ func TestNextCommand_PrettyStructuredFields(t *testing.T) {
 		Approach:    "run migrations",
 		Verify:      "check table exists",
 		Result:      "migration output",
-		Status:      models.StatusCaptured,
+		Status:      models.StatusReady,
 		Created:     now,
 		Updated:     now,
 	}
@@ -214,7 +214,7 @@ func TestNextCommand_Pretty(t *testing.T) {
 		ID:          "aaaa",
 		Name:        "Test Task",
 		Description: "A description",
-		Status:      models.StatusCaptured,
+		Status:      models.StatusReady,
 		Created:     now,
 		Updated:     now,
 	}

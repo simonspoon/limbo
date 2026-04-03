@@ -10,12 +10,19 @@ import (
 )
 
 var (
-	addDescription string
-	addParent      string
-	addPretty      bool
-	addApproach    string
-	addVerify      string
-	addResult      string
+	addDescription        string
+	addParent             string
+	addPretty             bool
+	addApproach           string
+	addAction             string
+	addVerify             string
+	addResult             string
+	addAcceptanceCriteria string
+	addScopeOut           string
+	addAffectedAreas      string
+	addTestStrategy       string
+	addRisks              string
+	addReport             string
 )
 
 var addCmd = &cobra.Command{
@@ -30,9 +37,17 @@ func init() {
 	addCmd.Flags().StringVarP(&addDescription, "description", "d", "", "Task description")
 	addCmd.Flags().StringVar(&addParent, "parent", "", "Parent task ID")
 	addCmd.Flags().BoolVar(&addPretty, "pretty", false, "Pretty print output")
-	addCmd.Flags().StringVar(&addApproach, "action", "", "What concrete work to perform")
+	addCmd.Flags().StringVar(&addApproach, "approach", "", "What concrete work to perform")
+	addCmd.Flags().StringVar(&addAction, "action", "", "What concrete work to perform (alias for --approach)")
 	addCmd.Flags().StringVar(&addVerify, "verify", "", "How to confirm the action succeeded")
 	addCmd.Flags().StringVar(&addResult, "result", "", "Template for what to report back")
+	addCmd.Flags().StringVar(&addAcceptanceCriteria, "acceptance-criteria", "", "Criteria for acceptance")
+	addCmd.Flags().StringVar(&addScopeOut, "scope-out", "", "What is explicitly out of scope")
+	addCmd.Flags().StringVar(&addAffectedAreas, "affected-areas", "", "Areas of the codebase affected")
+	addCmd.Flags().StringVar(&addTestStrategy, "test-strategy", "", "How to test the changes")
+	addCmd.Flags().StringVar(&addRisks, "risks", "", "Known risks and mitigations")
+	addCmd.Flags().StringVar(&addReport, "report", "", "Completion report")
+	_ = addCmd.Flags().MarkHidden("action")
 }
 
 func runAdd(cmd *cobra.Command, args []string) error {
@@ -68,19 +83,31 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Resolve approach: --approach wins, --action is fallback alias
+	approach := addApproach
+	if approach == "" && addAction != "" {
+		approach = addAction
+	}
+
 	// Create task
 	now := time.Now()
 	task := &models.Task{
-		ID:          taskID,
-		Name:        name,
-		Description: addDescription,
-		Approach:    addApproach,
-		Verify:      addVerify,
-		Result:      addResult,
-		Parent:      parent,
-		Status:      models.StatusCaptured,
-		Created:     now,
-		Updated:     now,
+		ID:                 taskID,
+		Name:               name,
+		Description:        addDescription,
+		Approach:           approach,
+		Verify:             addVerify,
+		Result:             addResult,
+		AcceptanceCriteria: addAcceptanceCriteria,
+		ScopeOut:           addScopeOut,
+		AffectedAreas:      addAffectedAreas,
+		TestStrategy:       addTestStrategy,
+		Risks:              addRisks,
+		Report:             addReport,
+		Parent:             parent,
+		Status:             models.StatusCaptured,
+		Created:            now,
+		Updated:            now,
 	}
 
 	// Save task
