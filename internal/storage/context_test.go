@@ -242,8 +242,9 @@ func TestDeleteContext_NoErrorIfMissing(t *testing.T) {
 }
 
 func TestContextDir_Path(t *testing.T) {
-	store := NewStorageAt("/tmp/project")
-	expected := filepath.Join("/tmp/project", LimboDir, ContextDirName, "abcd")
+	dir := t.TempDir()
+	store := NewStorageAt(dir)
+	expected := filepath.Join(dir, LimboDir, ContextDirName, "abcd")
 	assert.Equal(t, expected, store.ContextDir("abcd"))
 }
 

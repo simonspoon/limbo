@@ -71,7 +71,7 @@ func (s *Storage) WriteContext(id string, sections map[string]string) error {
 
 // AppendNote appends a timestamped note to the Notes section of context.md.
 // Creates the file/directory if needed.
-func (s *Storage) AppendNote(id string, content string, timestamp time.Time) error {
+func (s *Storage) AppendNote(id, content string, timestamp time.Time) error {
 	dir := s.ContextDir(id)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("failed to create context directory: %w", err)
@@ -280,7 +280,9 @@ func sortSections(sections map[string]string) []string {
 	})
 	sort.Strings(custom)
 
-	result := append(known, custom...)
+	result := make([]string, 0, len(known)+len(custom)+1)
+	result = append(result, known...)
+	result = append(result, custom...)
 	if hasNotes {
 		result = append(result, "Notes")
 	}
