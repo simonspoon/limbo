@@ -286,7 +286,8 @@ func TestStatusCommand_AutoRemovesBlockedBy(t *testing.T) {
 	blocker := &models.Task{
 		ID:      "aaaa",
 		Name:    "Blocker",
-		Status:  models.StatusCaptured,
+		Status:  models.StatusInReview,
+		Report:  "done",
 		Created: now,
 		Updated: now,
 	}
@@ -304,6 +305,7 @@ func TestStatusCommand_AutoRemovesBlockedBy(t *testing.T) {
 
 	// Mark blocker as done
 	statusPretty = false
+	statusOutcome = "completed"
 	err = runStatus(nil, []string{blocker.ID, models.StatusDone})
 	require.NoError(t, err)
 

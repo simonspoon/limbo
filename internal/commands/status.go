@@ -3,6 +3,7 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -11,8 +12,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var statusPretty bool
-var statusOutcome string
+var (
+	statusPretty  bool
+	statusOutcome string
+	statusReason  string
+	statusBy      string
+)
 
 var statusCmd = &cobra.Command{
 	Use:   "status <id> <status>",
@@ -25,6 +30,8 @@ var statusCmd = &cobra.Command{
 func init() {
 	statusCmd.Flags().BoolVar(&statusPretty, "pretty", false, "Pretty print output")
 	statusCmd.Flags().StringVar(&statusOutcome, "outcome", "", "Actual result when marking done")
+	statusCmd.Flags().StringVar(&statusReason, "reason", "", "Reason for backward transition")
+	statusCmd.Flags().StringVar(&statusBy, "by", "", "Who triggered the transition")
 }
 
 func runStatus(cmd *cobra.Command, args []string) error {
@@ -57,6 +64,11 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Set outcome before gate validation so in-review->done gate can pass
+	if newStatus == models.StatusDone && statusOutcome != "" {
+		task.Outcome = statusOutcome
+	}
+
 	// Validate transition constraints
 	if err := validateStatusTransition(store, task, newStatus); err != nil {
 		return err
@@ -69,10 +81,15 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Set outcome when marking done
-	if newStatus == models.StatusDone && statusOutcome != "" {
-		task.Outcome = statusOutcome
-	}
+	// Record history entry
+	oldStatus := task.Status
+	task.History = append(task.History, models.HistoryEntry{
+		From:   oldStatus,
+		To:     newStatus,
+		By:     statusBy,
+		At:     time.Now(),
+		Reason: statusReason,
+	})
 
 	// Update status and timestamp
 	task.Status = newStatus
@@ -108,7 +125,80 @@ func printStatusUpdate(task *models.Task) {
 }
 
 func validateStatusTransition(store *storage.Storage, task *models.Task, newStatus string) error {
-	if newStatus == models.StatusInProgress {
+	// Manually blocked tasks cannot transition at all
+	if task.ManualBlockReason != "" {
+		return fmt.Errorf("cannot transition task %s: manually blocked (%s)", task.ID, task.ManualBlockReason)
+	}
+
+	oldIndex := models.StageIndex(task.Status)
+	newIndex := models.StageIndex(newStatus)
+
+	// Backward transition: require --reason
+	if newIndex < oldIndex {
+		if statusReason == "" {
+			return fmt.Errorf("cannot transition %s backward from %s to %s: --reason is required", task.ID, task.Status, newStatus)
+		}
+		// Backward transitions skip gate validation
+		return nil
+	}
+
+	// Forward transition: validate gates for each intermediate step
+	for i := oldIndex; i < newIndex; i++ {
+		from := models.StageOrder[i]
+		to := models.StageOrder[i+1]
+		if err := validateGate(store, task, from, to); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func validateGate(store *storage.Storage, task *models.Task, from, to string) error {
+	switch from + "->" + to {
+	case models.StatusCaptured + "->" + models.StatusRefined:
+		var missing []string
+		if task.AcceptanceCriteria == "" {
+			missing = append(missing, "acceptance_criteria")
+		}
+		if task.ScopeOut == "" {
+			missing = append(missing, "scope_out")
+		}
+		if len(missing) > 0 {
+			return fmt.Errorf("cannot transition %s from %s to %s: missing required fields: %s",
+				task.ID, from, to, strings.Join(missing, ", "))
+		}
+
+	case models.StatusRefined + "->" + models.StatusPlanned:
+		var missing []string
+		if task.Approach == "" {
+			missing = append(missing, "approach")
+		}
+		if task.AffectedAreas == "" {
+			missing = append(missing, "affected_areas")
+		}
+		if task.TestStrategy == "" {
+			missing = append(missing, "test_strategy")
+		}
+		if task.Risks == "" {
+			missing = append(missing, "risks")
+		}
+		if len(missing) > 0 {
+			return fmt.Errorf("cannot transition %s from %s to %s: missing required fields: %s",
+				task.ID, from, to, strings.Join(missing, ", "))
+		}
+
+	case models.StatusPlanned + "->" + models.StatusReady:
+		if task.Verify == "" {
+			return fmt.Errorf("cannot transition %s from %s to %s: missing required fields: verify",
+				task.ID, from, to)
+		}
+
+	case models.StatusReady + "->" + models.StatusInProgress:
+		if task.Owner == nil {
+			return fmt.Errorf("cannot transition %s from %s to %s: task must be claimed (no owner)",
+				task.ID, from, to)
+		}
 		blocked, err := store.IsBlocked(task)
 		if err != nil {
 			return err
@@ -116,9 +206,18 @@ func validateStatusTransition(store *storage.Storage, task *models.Task, newStat
 		if blocked {
 			return fmt.Errorf("cannot start task %s: blocked by %v", task.ID, task.BlockedBy)
 		}
-	}
 
-	if newStatus == models.StatusDone {
+	case models.StatusInProgress + "->" + models.StatusInReview:
+		if task.Report == "" {
+			return fmt.Errorf("cannot transition %s from %s to %s: missing required fields: report",
+				task.ID, from, to)
+		}
+
+	case models.StatusInReview + "->" + models.StatusDone:
+		if task.Outcome == "" {
+			return fmt.Errorf("cannot transition %s from %s to %s: missing required fields: outcome",
+				task.ID, from, to)
+		}
 		hasUndone, err := store.HasUndoneChildren(task.ID)
 		if err != nil {
 			return err
