@@ -275,6 +275,194 @@ func TestNextCommand_SkipsBlockedTasks(t *testing.T) {
 	assert.Len(t, result.Candidates, 1) // blocked task should be filtered out
 }
 
+func TestManualBlock_Success(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	now := time.Now()
+	task := &models.Task{
+		ID:      "aaaa",
+		Name:    "Test Task",
+		Status:  models.StatusInProgress,
+		Created: now,
+		Updated: now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	blockPretty = false
+	blockReason = "waiting for external review"
+	blockBy = "alice"
+
+	err = runBlock(nil, []string{task.ID})
+	require.NoError(t, err)
+
+	updated, err := store.LoadTask(task.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "waiting for external review", updated.ManualBlockReason)
+	assert.Equal(t, models.StatusInProgress, updated.BlockedFromStage)
+	require.NotEmpty(t, updated.History)
+	last := updated.History[len(updated.History)-1]
+	assert.Equal(t, models.StatusInProgress, last.From)
+	assert.Equal(t, "blocked", last.To)
+	assert.Equal(t, "alice", last.By)
+	assert.Equal(t, "waiting for external review", last.Reason)
+}
+
+func TestManualBlock_MissingReason(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	now := time.Now()
+	task := &models.Task{
+		ID:      "aaaa",
+		Name:    "Test Task",
+		Status:  models.StatusCaptured,
+		Created: now,
+		Updated: now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	blockPretty = false
+	blockReason = ""
+	blockBy = ""
+
+	err = runBlock(nil, []string{task.ID})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "--reason is required")
+}
+
+func TestManualBlock_AlreadyBlocked(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	now := time.Now()
+	task := &models.Task{
+		ID:                "aaaa",
+		Name:              "Test Task",
+		Status:            models.StatusInProgress,
+		ManualBlockReason: "existing block",
+		BlockedFromStage:  models.StatusInProgress,
+		Created:           now,
+		Updated:           now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	blockPretty = false
+	blockReason = "new reason"
+	blockBy = ""
+
+	err = runBlock(nil, []string{task.ID})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "already manually blocked")
+}
+
+func TestManualUnblock_Success(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	now := time.Now()
+	task := &models.Task{
+		ID:                "aaaa",
+		Name:              "Test Task",
+		Status:            models.StatusInProgress,
+		ManualBlockReason: "waiting on vendor",
+		BlockedFromStage:  models.StatusInProgress,
+		Created:           now,
+		Updated:           now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	unblockPretty = false
+	unblockBy = "bob"
+
+	err = runUnblock(nil, []string{task.ID})
+	require.NoError(t, err)
+
+	updated, err := store.LoadTask(task.ID)
+	require.NoError(t, err)
+	assert.Equal(t, models.StatusInProgress, updated.Status)
+	assert.Empty(t, updated.ManualBlockReason)
+	assert.Empty(t, updated.BlockedFromStage)
+	require.NotEmpty(t, updated.History)
+	last := updated.History[len(updated.History)-1]
+	assert.Equal(t, "blocked", last.From)
+	assert.Equal(t, models.StatusInProgress, last.To)
+	assert.Equal(t, "bob", last.By)
+}
+
+func TestManualUnblock_NotManuallyBlocked(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	now := time.Now()
+	task := &models.Task{
+		ID:      "aaaa",
+		Name:    "Test Task",
+		Status:  models.StatusCaptured,
+		Created: now,
+		Updated: now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	unblockPretty = false
+	unblockBy = ""
+
+	err = runUnblock(nil, []string{task.ID})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not manually blocked")
+}
+
+func TestManualBlock_StatusTransitionBlocked(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	now := time.Now()
+	task := &models.Task{
+		ID:      "aaaa",
+		Name:    "Test Task",
+		Status:  models.StatusCaptured,
+		Created: now,
+		Updated: now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	// Manually block the task
+	blockPretty = false
+	blockReason = "needs architect approval"
+	blockBy = ""
+
+	err = runBlock(nil, []string{task.ID})
+	require.NoError(t, err)
+
+	// Attempt status transition — should fail because task is manually blocked
+	statusPretty = false
+	statusOutcome = ""
+	statusReason = ""
+	statusBy = ""
+
+	err = runStatus(nil, []string{task.ID, models.StatusRefined})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "manually blocked")
+}
+
 func TestStatusCommand_AutoRemovesBlockedBy(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()

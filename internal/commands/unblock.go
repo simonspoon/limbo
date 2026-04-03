@@ -11,21 +11,32 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var unblockPretty bool
+var (
+	unblockPretty bool
+	unblockBy     string
+)
 
 var unblockCmd = &cobra.Command{
-	Use:   "unblock <blocker-id> <blocked-id>",
-	Short: "Remove a dependency between tasks",
-	Long:  `Remove blocker-id from blocked-id's dependencies.`,
-	Args:  cobra.ExactArgs(2),
+	Use:   "unblock <id> [blocked-id]",
+	Short: "Unblock a task (manual or dependency)",
+	Long:  `With one arg: remove manual block and restore stage. With two args: remove dependency.`,
+	Args:  cobra.RangeArgs(1, 2),
 	RunE:  runUnblock,
 }
 
 func init() {
 	unblockCmd.Flags().BoolVar(&unblockPretty, "pretty", false, "Pretty print output")
+	unblockCmd.Flags().StringVar(&unblockBy, "by", "", "Who unblocked the task")
 }
 
 func runUnblock(cmd *cobra.Command, args []string) error {
+	if len(args) == 1 {
+		return runManualUnblock(args)
+	}
+	return runDependencyUnblock(args)
+}
+
+func runDependencyUnblock(args []string) error {
 	blockerID := models.NormalizeTaskID(args[0])
 	if !models.IsValidTaskID(blockerID) {
 		return fmt.Errorf("invalid blocker ID: %s", args[0])
@@ -78,6 +89,58 @@ func runUnblock(cmd *cobra.Command, args []string) error {
 			ID        string   `json:"id"`
 			BlockedBy []string `json:"blockedBy"`
 		}{blocked.ID, blocked.BlockedBy})
+		fmt.Println(string(out))
+	}
+
+	return nil
+}
+
+func runManualUnblock(args []string) error {
+	id := models.NormalizeTaskID(args[0])
+	if !models.IsValidTaskID(id) {
+		return fmt.Errorf("invalid task ID: %s", args[0])
+	}
+
+	store, err := getStorage()
+	if err != nil {
+		return err
+	}
+
+	task, err := store.LoadTask(id)
+	if err != nil {
+		if err == storage.ErrTaskNotFound {
+			return fmt.Errorf("task %s not found", id)
+		}
+		return err
+	}
+
+	if task.ManualBlockReason == "" {
+		return fmt.Errorf("task %s is not manually blocked", id)
+	}
+
+	task.History = append(task.History, models.HistoryEntry{
+		From: "blocked",
+		To:   task.BlockedFromStage,
+		By:   unblockBy,
+		At:   time.Now(),
+	})
+	task.Status = task.BlockedFromStage
+	task.ManualBlockReason = ""
+	task.BlockedFromStage = ""
+	task.Updated = time.Now()
+
+	if err := store.SaveTask(task); err != nil {
+		return err
+	}
+
+	if unblockPretty {
+		green := color.New(color.FgGreen)
+		green.Printf("Task %s unblocked, restored to %s\n", id, task.Status)
+	} else {
+		out, _ := json.Marshal(struct {
+			ID     string `json:"id"`
+			Status string `json:"status"`
+		}{task.ID, task.Status})
 		fmt.Println(string(out))
 	}
 

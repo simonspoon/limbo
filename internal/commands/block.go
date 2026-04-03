@@ -11,21 +11,34 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var blockPretty bool
+var (
+	blockPretty bool
+	blockReason string
+	blockBy     string
+)
 
 var blockCmd = &cobra.Command{
-	Use:   "block <blocker-id> <blocked-id>",
-	Short: "Add a dependency between tasks",
-	Long:  `Make blocked-id depend on blocker-id. The blocked task cannot be worked on until the blocker is done.`,
-	Args:  cobra.ExactArgs(2),
+	Use:   "block <id> [blocked-id]",
+	Short: "Block a task (manual or dependency)",
+	Long:  `With one arg + --reason: manually block a task. With two args: add a dependency.`,
+	Args:  cobra.RangeArgs(1, 2),
 	RunE:  runBlock,
 }
 
 func init() {
 	blockCmd.Flags().BoolVar(&blockPretty, "pretty", false, "Pretty print output")
+	blockCmd.Flags().StringVar(&blockReason, "reason", "", "Reason for manually blocking (required for manual block)")
+	blockCmd.Flags().StringVar(&blockBy, "by", "", "Who blocked the task")
 }
 
 func runBlock(cmd *cobra.Command, args []string) error {
+	if len(args) == 1 {
+		return runManualBlock(args)
+	}
+	return runDependencyBlock(args)
+}
+
+func runDependencyBlock(args []string) error {
 	blockerID, blockedID, err := parseBlockArgs(args)
 	if err != nil {
 		return err
@@ -60,6 +73,63 @@ func runBlock(cmd *cobra.Command, args []string) error {
 			ID        string   `json:"id"`
 			BlockedBy []string `json:"blockedBy"`
 		}{blocked.ID, blocked.BlockedBy})
+		fmt.Println(string(out))
+	}
+
+	return nil
+}
+
+func runManualBlock(args []string) error {
+	id := models.NormalizeTaskID(args[0])
+	if !models.IsValidTaskID(id) {
+		return fmt.Errorf("invalid task ID: %s", args[0])
+	}
+
+	if blockReason == "" {
+		return fmt.Errorf("--reason is required for manual block")
+	}
+
+	store, err := getStorage()
+	if err != nil {
+		return err
+	}
+
+	task, err := store.LoadTask(id)
+	if err != nil {
+		if err == storage.ErrTaskNotFound {
+			return fmt.Errorf("task %s not found", id)
+		}
+		return err
+	}
+
+	if task.ManualBlockReason != "" {
+		return fmt.Errorf("task %s is already manually blocked", id)
+	}
+
+	task.ManualBlockReason = blockReason
+	task.BlockedFromStage = task.Status
+	task.History = append(task.History, models.HistoryEntry{
+		From:   task.Status,
+		To:     "blocked",
+		By:     blockBy,
+		At:     time.Now(),
+		Reason: blockReason,
+	})
+	task.Updated = time.Now()
+
+	if err := store.SaveTask(task); err != nil {
+		return err
+	}
+
+	if blockPretty {
+		green := color.New(color.FgGreen)
+		green.Printf("Task %s manually blocked: %s\n", id, blockReason)
+	} else {
+		out, _ := json.Marshal(struct {
+			ID                string `json:"id"`
+			ManualBlockReason string `json:"manualBlockReason"`
+			BlockedFromStage  string `json:"blockedFromStage"`
+		}{task.ID, task.ManualBlockReason, task.BlockedFromStage})
 		fmt.Println(string(out))
 	}
 
