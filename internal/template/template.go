@@ -171,7 +171,8 @@ func RenderTree(tmpl *Template) string {
 }
 
 func renderTaskTree(b *strings.Builder, tasks []TaskTemplate, prefix string) {
-	for i, t := range tasks {
+	for i := range tasks {
+		t := &tasks[i]
 		isLast := i == len(tasks)-1
 		connector := "├── "
 		childPrefix := prefix + "│   "
@@ -202,7 +203,8 @@ func createTasks(store *storage.Storage, tasks []TaskTemplate, parentID string, 
 		scopeMap[parentID] = make(map[string]string)
 	}
 
-	for _, tt := range tasks {
+	for i := range tasks {
+		tt := &tasks[i]
 		taskID, err := store.GenerateTaskID()
 		if err != nil {
 			return err
@@ -255,7 +257,8 @@ func createTasks(store *storage.Storage, tasks []TaskTemplate, parentID string, 
 func applyBlockedBy(store *storage.Storage, tasks []TaskTemplate, parentID string, scopeMap map[string]map[string]string) error {
 	scope := scopeMap[parentID]
 
-	for _, tt := range tasks {
+	for i := range tasks {
+		tt := &tasks[i]
 		taskID := scope[tt.Name]
 
 		for _, blockerName := range tt.BlockedBy {

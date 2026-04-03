@@ -154,45 +154,37 @@ func validateStatusTransition(store *storage.Storage, task *models.Task, newStat
 	return nil
 }
 
+// checkRequired returns an error listing any empty fields from the name→value pairs.
+func checkRequired(taskID, from, to string, fields ...string) error {
+	var missing []string
+	for i := 0; i < len(fields); i += 2 {
+		if fields[i+1] == "" {
+			missing = append(missing, fields[i])
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("cannot transition %s from %s to %s: missing required fields: %s",
+			taskID, from, to, strings.Join(missing, ", "))
+	}
+	return nil
+}
+
 func validateGate(store *storage.Storage, task *models.Task, from, to string) error {
 	switch from + "->" + to {
 	case models.StatusCaptured + "->" + models.StatusRefined:
-		var missing []string
-		if task.AcceptanceCriteria == "" {
-			missing = append(missing, "acceptance_criteria")
-		}
-		if task.ScopeOut == "" {
-			missing = append(missing, "scope_out")
-		}
-		if len(missing) > 0 {
-			return fmt.Errorf("cannot transition %s from %s to %s: missing required fields: %s",
-				task.ID, from, to, strings.Join(missing, ", "))
-		}
+		return checkRequired(task.ID, from, to,
+			"acceptance_criteria", task.AcceptanceCriteria,
+			"scope_out", task.ScopeOut)
 
 	case models.StatusRefined + "->" + models.StatusPlanned:
-		var missing []string
-		if task.Approach == "" {
-			missing = append(missing, "approach")
-		}
-		if task.AffectedAreas == "" {
-			missing = append(missing, "affected_areas")
-		}
-		if task.TestStrategy == "" {
-			missing = append(missing, "test_strategy")
-		}
-		if task.Risks == "" {
-			missing = append(missing, "risks")
-		}
-		if len(missing) > 0 {
-			return fmt.Errorf("cannot transition %s from %s to %s: missing required fields: %s",
-				task.ID, from, to, strings.Join(missing, ", "))
-		}
+		return checkRequired(task.ID, from, to,
+			"approach", task.Approach,
+			"affected_areas", task.AffectedAreas,
+			"test_strategy", task.TestStrategy,
+			"risks", task.Risks)
 
 	case models.StatusPlanned + "->" + models.StatusReady:
-		if task.Verify == "" {
-			return fmt.Errorf("cannot transition %s from %s to %s: missing required fields: verify",
-				task.ID, from, to)
-		}
+		return checkRequired(task.ID, from, to, "verify", task.Verify)
 
 	case models.StatusReady + "->" + models.StatusInProgress:
 		if task.Owner == nil {
@@ -208,15 +200,11 @@ func validateGate(store *storage.Storage, task *models.Task, from, to string) er
 		}
 
 	case models.StatusInProgress + "->" + models.StatusInReview:
-		if task.Report == "" {
-			return fmt.Errorf("cannot transition %s from %s to %s: missing required fields: report",
-				task.ID, from, to)
-		}
+		return checkRequired(task.ID, from, to, "report", task.Report)
 
 	case models.StatusInReview + "->" + models.StatusDone:
-		if task.Outcome == "" {
-			return fmt.Errorf("cannot transition %s from %s to %s: missing required fields: outcome",
-				task.ID, from, to)
+		if err := checkRequired(task.ID, from, to, "outcome", task.Outcome); err != nil {
+			return err
 		}
 		hasUndone, err := store.HasUndoneChildren(task.ID)
 		if err != nil {

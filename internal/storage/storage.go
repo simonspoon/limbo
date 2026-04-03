@@ -814,8 +814,7 @@ func (s *Storage) migrateFromV5(data []byte) (*TaskStore, error) {
 
 	// Map old statuses to new lifecycle stages
 	for i := range store.Tasks {
-		switch store.Tasks[i].Status {
-		case "todo":
+		if store.Tasks[i].Status == "todo" {
 			store.Tasks[i].Status = "captured"
 		}
 		// "in-progress" and "done" stay as-is

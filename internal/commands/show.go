@@ -112,6 +112,13 @@ func findBlockerInfo(tasks []models.Task, id string) *blockerInfo {
 	return nil
 }
 
+// printField prints a labeled field if non-empty.
+func printField(c *color.Color, label, value string) {
+	if value != "" {
+		c.Printf("%-13s%s\n", label+":", value)
+	}
+}
+
 func printTaskDetails(task *models.Task, blockers, blocks []blockerInfo) {
 	cyan := color.New(color.FgCyan, color.Bold)
 	white := color.New(color.FgWhite)
@@ -126,41 +133,17 @@ func printTaskDetails(task *models.Task, blockers, blocks []blockerInfo) {
 
 	white.Printf("Name:        %s\n", task.Name)
 
-	if task.Description != "" {
-		white.Printf("Description: %s\n", task.Description)
-	}
-
-	if task.AcceptanceCriteria != "" {
-		white.Printf("Acceptance:  %s\n", task.AcceptanceCriteria)
-	}
-	if task.ScopeOut != "" {
-		white.Printf("Scope Out:   %s\n", task.ScopeOut)
-	}
-	if task.Approach != "" {
-		white.Printf("Approach:    %s\n", task.Approach)
-	}
-	if task.AffectedAreas != "" {
-		white.Printf("Affected:    %s\n", task.AffectedAreas)
-	}
-	if task.TestStrategy != "" {
-		white.Printf("Test Plan:   %s\n", task.TestStrategy)
-	}
-	if task.Risks != "" {
-		white.Printf("Risks:       %s\n", task.Risks)
-	}
-	if task.Verify != "" {
-		white.Printf("Verify:      %s\n", task.Verify)
-	}
-	if task.Result != "" {
-		white.Printf("Result:      %s\n", task.Result)
-	}
-	if task.Report != "" {
-		white.Printf("Report:      %s\n", task.Report)
-	}
-	if task.Outcome != "" {
-		green := color.New(color.FgGreen)
-		green.Printf("Outcome:     %s\n", task.Outcome)
-	}
+	printField(white, "Description", task.Description)
+	printField(white, "Acceptance", task.AcceptanceCriteria)
+	printField(white, "Scope Out", task.ScopeOut)
+	printField(white, "Approach", task.Approach)
+	printField(white, "Affected", task.AffectedAreas)
+	printField(white, "Test Plan", task.TestStrategy)
+	printField(white, "Risks", task.Risks)
+	printField(white, "Verify", task.Verify)
+	printField(white, "Result", task.Result)
+	printField(white, "Report", task.Report)
+	printField(color.New(color.FgGreen), "Outcome", task.Outcome)
 
 	white.Printf("Status:      %s\n", task.Status)
 
