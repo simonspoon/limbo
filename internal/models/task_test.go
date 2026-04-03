@@ -7,16 +7,21 @@ import (
 )
 
 func TestIsValidStatus(t *testing.T) {
-	// Valid statuses
-	assert.True(t, IsValidStatus(StatusTodo))
+	// Valid statuses — all 7 stages
+	assert.True(t, IsValidStatus(StatusCaptured))
+	assert.True(t, IsValidStatus(StatusRefined))
+	assert.True(t, IsValidStatus(StatusPlanned))
+	assert.True(t, IsValidStatus(StatusReady))
 	assert.True(t, IsValidStatus(StatusInProgress))
+	assert.True(t, IsValidStatus(StatusInReview))
 	assert.True(t, IsValidStatus(StatusDone))
 
 	// Invalid statuses
 	assert.False(t, IsValidStatus(""))
 	assert.False(t, IsValidStatus("invalid"))
+	assert.False(t, IsValidStatus("todo"))        // old status, no longer valid
 	assert.False(t, IsValidStatus("DONE"))        // case sensitive
-	assert.False(t, IsValidStatus("TODO"))        // case sensitive
+	assert.False(t, IsValidStatus("CAPTURED"))    // case sensitive
 	assert.False(t, IsValidStatus("in_progress")) // wrong format
 }
 
@@ -66,22 +71,38 @@ func TestNormalizeTaskID(t *testing.T) {
 
 func TestHasStructuredFields(t *testing.T) {
 	// All three set → true
-	task := &Task{Action: "do X", Verify: "check Y", Result: "report Z"}
+	task := &Task{Approach: "do X", Verify: "check Y", Result: "report Z"}
 	assert.True(t, task.HasStructuredFields())
 
-	// Missing Action → false
-	task = &Task{Action: "", Verify: "check Y", Result: "report Z"}
+	// Missing Approach → false
+	task = &Task{Approach: "", Verify: "check Y", Result: "report Z"}
 	assert.False(t, task.HasStructuredFields())
 
 	// Missing Verify → false
-	task = &Task{Action: "do X", Verify: "", Result: "report Z"}
+	task = &Task{Approach: "do X", Verify: "", Result: "report Z"}
 	assert.False(t, task.HasStructuredFields())
 
 	// Missing Result → false
-	task = &Task{Action: "do X", Verify: "check Y", Result: ""}
+	task = &Task{Approach: "do X", Verify: "check Y", Result: ""}
 	assert.False(t, task.HasStructuredFields())
 
 	// All empty → false (legacy task)
 	task = &Task{}
 	assert.False(t, task.HasStructuredFields())
+}
+
+func TestStageIndex(t *testing.T) {
+	// Verify ordering
+	assert.Equal(t, 0, StageIndex(StatusCaptured))
+	assert.Equal(t, 1, StageIndex(StatusRefined))
+	assert.Equal(t, 2, StageIndex(StatusPlanned))
+	assert.Equal(t, 3, StageIndex(StatusReady))
+	assert.Equal(t, 4, StageIndex(StatusInProgress))
+	assert.Equal(t, 5, StageIndex(StatusInReview))
+	assert.Equal(t, 6, StageIndex(StatusDone))
+
+	// Invalid status returns -1
+	assert.Equal(t, -1, StageIndex(""))
+	assert.Equal(t, -1, StageIndex("invalid"))
+	assert.Equal(t, -1, StageIndex("todo"))
 }

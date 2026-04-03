@@ -21,11 +21,17 @@ const contextFileName = "context.md"
 // Any section not in this list is considered custom and sorted alphabetically
 // after the known sections but before Notes.
 var knownSectionOrder = map[string]int{
-	"Action":      0,
-	"Verify":      1,
-	"Result":      2,
-	"Outcome":     3,
-	"Description": 4,
+	"Approach":           0,
+	"Verify":             1,
+	"Result":             2,
+	"Outcome":            3,
+	"AcceptanceCriteria": 4,
+	"ScopeOut":           5,
+	"AffectedAreas":      6,
+	"TestStrategy":       7,
+	"Risks":              8,
+	"Report":             9,
+	"Description":        10,
 }
 
 // ContextDir returns the path to a task's context directory.

@@ -22,7 +22,7 @@ func TestParentCommand(t *testing.T) {
 	parent := &models.Task{
 		ID:      "aaaa",
 		Name:    "Parent Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -31,7 +31,7 @@ func TestParentCommand(t *testing.T) {
 	child := &models.Task{
 		ID:      "aaab",
 		Name:    "Child Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -86,7 +86,7 @@ func TestParentCommand_SelfParent(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -112,7 +112,7 @@ func TestParentCommand_ChildNotFound(t *testing.T) {
 	parent := &models.Task{
 		ID:      "aaaa",
 		Name:    "Parent Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -138,7 +138,7 @@ func TestParentCommand_ParentNotFound(t *testing.T) {
 	child := &models.Task{
 		ID:      "aaaa",
 		Name:    "Child Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -176,7 +176,7 @@ func TestParentCommand_DoneParent(t *testing.T) {
 	child := &models.Task{
 		ID:      "aaab",
 		Name:    "Child Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -204,7 +204,7 @@ func TestParentCommand_CircularDependency(t *testing.T) {
 	taskA := &models.Task{
 		ID:      taskAID,
 		Name:    "Task A",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -215,7 +215,7 @@ func TestParentCommand_CircularDependency(t *testing.T) {
 		ID:      taskBID,
 		Name:    "Task B",
 		Parent:  &taskAID,
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -225,7 +225,7 @@ func TestParentCommand_CircularDependency(t *testing.T) {
 		ID:      "aaac",
 		Name:    "Task C",
 		Parent:  &taskBID,
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -251,7 +251,7 @@ func TestParentCommand_PrettyOutput(t *testing.T) {
 	parent := &models.Task{
 		ID:      "aaaa",
 		Name:    "Parent Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -260,7 +260,7 @@ func TestParentCommand_PrettyOutput(t *testing.T) {
 	child := &models.Task{
 		ID:      "aaab",
 		Name:    "Child Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}

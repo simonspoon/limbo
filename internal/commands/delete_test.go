@@ -23,7 +23,7 @@ func TestDeleteCommand(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -80,7 +80,7 @@ func TestDeleteCommand_BlockedByUndoneChildren(t *testing.T) {
 	parent := &models.Task{
 		ID:      parentID,
 		Name:    "Parent Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -90,7 +90,7 @@ func TestDeleteCommand_BlockedByUndoneChildren(t *testing.T) {
 	child := &models.Task{
 		ID:      "aaab",
 		Name:    "Child Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Parent:  &parentID,
 		Created: now,
 		Updated: now,
@@ -194,7 +194,7 @@ func TestDeleteCommand_BlockedByUndoneGrandchildren(t *testing.T) {
 	child := &models.Task{
 		ID:      "aaac",
 		Name:    "Child Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Parent:  &parentID,
 		Created: now,
 		Updated: now,
@@ -227,7 +227,7 @@ func TestDeleteCommand_CleansUpBlockedBy(t *testing.T) {
 	blocker := &models.Task{
 		ID:      "aaaa",
 		Name:    "Blocker Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -237,7 +237,7 @@ func TestDeleteCommand_CleansUpBlockedBy(t *testing.T) {
 	blocked := &models.Task{
 		ID:        "aaab",
 		Name:      "Blocked Task",
-		Status:    models.StatusTodo,
+		Status:    models.StatusCaptured,
 		BlockedBy: []string{"aaaa"},
 		Created:   now,
 		Updated:   now,
@@ -268,7 +268,7 @@ func TestDeleteCommand_PrettyOutput(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -294,9 +294,9 @@ func TestDeleteCommand_CleansUpContextDir(t *testing.T) {
 		ID:          "aaaa",
 		Name:        "Task With Content",
 		Description: "A detailed description",
-		Action:      "Do something",
+		Approach:    "Do something",
 		Verify:      "Check it worked",
-		Status:      models.StatusTodo,
+		Status:      models.StatusCaptured,
 		Created:     now,
 		Updated:     now,
 	}

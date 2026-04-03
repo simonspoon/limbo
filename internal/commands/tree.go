@@ -141,7 +141,7 @@ func printTaskTree(w io.Writer, task *models.Task, taskMap map[string]models.Tas
 
 func getStatusColor(status string) *color.Color {
 	switch status {
-	case models.StatusTodo:
+	case models.StatusCaptured:
 		return color.New(color.FgCyan)
 	case models.StatusInProgress:
 		return color.New(color.FgYellow)
@@ -158,7 +158,7 @@ func formatStatus(status string) string {
 		return "IN-PROG"
 	case models.StatusDone:
 		return "DONE"
-	case models.StatusTodo:
+	case models.StatusCaptured:
 		return "TODO"
 	default:
 		return status

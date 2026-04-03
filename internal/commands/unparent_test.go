@@ -23,7 +23,7 @@ func TestUnparentCommand(t *testing.T) {
 	parent := &models.Task{
 		ID:      parentID,
 		Name:    "Parent Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -33,7 +33,7 @@ func TestUnparentCommand(t *testing.T) {
 		ID:      "aaab",
 		Name:    "Child Task",
 		Parent:  &parentID,
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -88,7 +88,7 @@ func TestUnparentCommand_AlreadyTopLevel(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Top Level Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -120,7 +120,7 @@ func TestUnparentCommand_PrettyOutput(t *testing.T) {
 	parent := &models.Task{
 		ID:      parentID,
 		Name:    "Parent Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -130,7 +130,7 @@ func TestUnparentCommand_PrettyOutput(t *testing.T) {
 		ID:      "aaab",
 		Name:    "Child Task",
 		Parent:  &parentID,
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -154,7 +154,7 @@ func TestUnparentCommand_AlreadyTopLevelPretty(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Top Level Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}

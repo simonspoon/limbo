@@ -34,7 +34,7 @@ func TestImportBasic(t *testing.T) {
 
 	now := time.Now()
 	tasks := []models.Task{
-		{ID: "aaaa", Name: "Task one", Status: models.StatusTodo, Created: now, Updated: now},
+		{ID: "aaaa", Name: "Task one", Status: models.StatusCaptured, Created: now, Updated: now},
 		{ID: "bbbb", Name: "Task two", Status: models.StatusInProgress, Created: now, Updated: now},
 	}
 	filePath := writeExportFile(t, dir, tasks)
@@ -65,7 +65,7 @@ func TestImportMergeMode(t *testing.T) {
 	existing := &models.Task{
 		ID:      existingID,
 		Name:    "Existing task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -73,7 +73,7 @@ func TestImportMergeMode(t *testing.T) {
 
 	// Import one more task (merge mode = default)
 	tasks := []models.Task{
-		{ID: "aaaa", Name: "Imported task", Status: models.StatusTodo, Created: now, Updated: now},
+		{ID: "aaaa", Name: "Imported task", Status: models.StatusCaptured, Created: now, Updated: now},
 	}
 	filePath := writeExportFile(t, dir, tasks)
 
@@ -103,7 +103,7 @@ func TestImportReplaceMode(t *testing.T) {
 		task := &models.Task{
 			ID:      id,
 			Name:    "Existing",
-			Status:  models.StatusTodo,
+			Status:  models.StatusCaptured,
 			Created: now,
 			Updated: now,
 		}
@@ -112,7 +112,7 @@ func TestImportReplaceMode(t *testing.T) {
 
 	// Import with replace
 	tasks := []models.Task{
-		{ID: "aaaa", Name: "Replaced task", Status: models.StatusTodo, Created: now, Updated: now},
+		{ID: "aaaa", Name: "Replaced task", Status: models.StatusCaptured, Created: now, Updated: now},
 	}
 	filePath := writeExportFile(t, dir, tasks)
 
@@ -137,7 +137,7 @@ func TestImportPreservesRelationships(t *testing.T) {
 	childID := "bbbb"
 	tasks := []models.Task{
 		{ID: parentID, Name: "Parent", Status: models.StatusInProgress, Created: now, Updated: now},
-		{ID: childID, Name: "Child", Parent: &parentID, Status: models.StatusTodo, BlockedBy: []string{parentID}, Created: now, Updated: now},
+		{ID: childID, Name: "Child", Parent: &parentID, Status: models.StatusCaptured, BlockedBy: []string{parentID}, Created: now, Updated: now},
 	}
 	filePath := writeExportFile(t, dir, tasks)
 
@@ -176,7 +176,7 @@ func TestImportNewIDs(t *testing.T) {
 
 	now := time.Now()
 	tasks := []models.Task{
-		{ID: "aaaa", Name: "Task", Status: models.StatusTodo, Created: now, Updated: now},
+		{ID: "aaaa", Name: "Task", Status: models.StatusCaptured, Created: now, Updated: now},
 	}
 	filePath := writeExportFile(t, dir, tasks)
 

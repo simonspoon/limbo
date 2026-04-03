@@ -130,8 +130,8 @@ func printTaskDetails(task *models.Task, blockers, blocks []blockerInfo) {
 		white.Printf("Description: %s\n", task.Description)
 	}
 
-	if task.Action != "" {
-		white.Printf("Action:      %s\n", task.Action)
+	if task.Approach != "" {
+		white.Printf("Approach:    %s\n", task.Approach)
 	}
 	if task.Verify != "" {
 		white.Printf("Verify:      %s\n", task.Verify)

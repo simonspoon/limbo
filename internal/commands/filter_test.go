@@ -13,7 +13,7 @@ import (
 func TestFilterCompletedTasks_HidesTopLevelDone(t *testing.T) {
 	now := time.Now()
 	tasks := []models.Task{
-		{ID: "aaaa", Name: "Todo task", Status: models.StatusTodo, Created: now, Updated: now},
+		{ID: "aaaa", Name: "Todo task", Status: models.StatusCaptured, Created: now, Updated: now},
 		{ID: "aaab", Name: "In-progress task", Status: models.StatusInProgress, Created: now, Updated: now},
 		{ID: "aaac", Name: "Done task", Status: models.StatusDone, Created: now, Updated: now},
 	}
@@ -52,8 +52,8 @@ func TestFilterCompletedTasks_ShowsDoneWithActiveParent(t *testing.T) {
 func TestFilterCompletedTasks_KeepsAllNonDone(t *testing.T) {
 	now := time.Now()
 	tasks := []models.Task{
-		{ID: "aaaa", Name: "Todo 1", Status: models.StatusTodo, Created: now, Updated: now},
-		{ID: "aaab", Name: "Todo 2", Status: models.StatusTodo, Created: now, Updated: now},
+		{ID: "aaaa", Name: "Todo 1", Status: models.StatusCaptured, Created: now, Updated: now},
+		{ID: "aaab", Name: "Todo 2", Status: models.StatusCaptured, Created: now, Updated: now},
 		{ID: "aaac", Name: "In-progress", Status: models.StatusInProgress, Created: now, Updated: now},
 	}
 
@@ -73,7 +73,7 @@ func TestFilterCompletedTasks_MixedHierarchy(t *testing.T) {
 	tasks := []models.Task{
 		{ID: "aaaa", Name: "Root A", Status: models.StatusInProgress, Created: now, Updated: now},
 		{ID: "aaab", Name: "Child A1", Status: models.StatusDone, Parent: &rootAID, Created: now, Updated: now},
-		{ID: "aaac", Name: "Child A2", Status: models.StatusTodo, Parent: &rootAID, Created: now, Updated: now},
+		{ID: "aaac", Name: "Child A2", Status: models.StatusCaptured, Parent: &rootAID, Created: now, Updated: now},
 		{ID: "bbbb", Name: "Root B", Status: models.StatusDone, Created: now, Updated: now},
 		{ID: "bbbc", Name: "Child B1", Status: models.StatusDone, Parent: &rootBID, Created: now, Updated: now},
 	}
@@ -99,7 +99,7 @@ func TestListHidesDoneByDefault(t *testing.T) {
 	store, err := storage.NewStorage()
 	require.NoError(t, err)
 
-	createTestTask(t, store, "Todo task", models.StatusTodo, nil)
+	createTestTask(t, store, "Todo task", models.StatusCaptured, nil)
 	createTestTask(t, store, "Done task", models.StatusDone, nil)
 
 	// Reset flags
@@ -122,7 +122,7 @@ func TestListShowAll(t *testing.T) {
 	store, err := storage.NewStorage()
 	require.NoError(t, err)
 
-	createTestTask(t, store, "Todo task", models.StatusTodo, nil)
+	createTestTask(t, store, "Todo task", models.StatusCaptured, nil)
 	createTestTask(t, store, "Done task", models.StatusDone, nil)
 
 	// Reset flags
@@ -145,7 +145,7 @@ func TestTreeHidesDoneByDefault(t *testing.T) {
 	store, err := storage.NewStorage()
 	require.NoError(t, err)
 
-	createTestTask(t, store, "Todo task", models.StatusTodo, nil)
+	createTestTask(t, store, "Todo task", models.StatusCaptured, nil)
 	createTestTask(t, store, "Done task", models.StatusDone, nil)
 
 	// Reset flags
@@ -163,7 +163,7 @@ func TestTreeShowAll(t *testing.T) {
 	store, err := storage.NewStorage()
 	require.NoError(t, err)
 
-	createTestTask(t, store, "Todo task", models.StatusTodo, nil)
+	createTestTask(t, store, "Todo task", models.StatusCaptured, nil)
 	createTestTask(t, store, "Done task", models.StatusDone, nil)
 
 	// Reset flags

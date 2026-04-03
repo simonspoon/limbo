@@ -33,7 +33,7 @@ func TestExportWithTasks(t *testing.T) {
 		ID:          id,
 		Name:        "Test task",
 		Description: "A test task",
-		Status:      models.StatusTodo,
+		Status:      models.StatusCaptured,
 		Created:     now,
 		Updated:     now,
 	}
@@ -72,7 +72,7 @@ func TestExportPreservesRelationships(t *testing.T) {
 		ID:        childID,
 		Name:      "Child",
 		Parent:    &parentID,
-		Status:    models.StatusTodo,
+		Status:    models.StatusCaptured,
 		BlockedBy: []string{parentID},
 		Created:   now,
 		Updated:   now,

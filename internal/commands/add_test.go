@@ -42,7 +42,7 @@ func TestAddCommand(t *testing.T) {
 	addDescription = ""
 	addParent = ""
 	addPretty = false
-	addAction = "do something"
+	addApproach = "do something"
 	addVerify = "check something"
 	addResult = "report something"
 
@@ -60,7 +60,7 @@ func TestAddCommand(t *testing.T) {
 
 	task := tasks[0]
 	assert.Equal(t, "Test Task", task.Name)
-	assert.Equal(t, models.StatusTodo, task.Status)
+	assert.Equal(t, models.StatusCaptured, task.Status)
 	assert.Empty(t, task.Description)
 	assert.Nil(t, task.Parent)
 }
@@ -73,7 +73,7 @@ func TestAddCommandWithDescription(t *testing.T) {
 	addDescription = "Test description"
 	addParent = ""
 	addPretty = false
-	addAction = "do something"
+	addApproach = "do something"
 	addVerify = "check something"
 	addResult = "report something"
 
@@ -102,7 +102,7 @@ func TestAddCommandWithParent(t *testing.T) {
 	addDescription = ""
 	addParent = ""
 	addPretty = false
-	addAction = "do something"
+	addApproach = "do something"
 	addVerify = "check something"
 	addResult = "report something"
 
@@ -150,7 +150,7 @@ func TestAddCommandNonExistentParent(t *testing.T) {
 	addParent = "zzzz"
 	addDescription = ""
 	addPretty = false
-	addAction = "do something"
+	addApproach = "do something"
 	addVerify = "check something"
 	addResult = "report something"
 
@@ -176,7 +176,7 @@ func TestAddCommandNotInProject(t *testing.T) {
 	addDescription = ""
 	addParent = ""
 	addPretty = false
-	addAction = "do something"
+	addApproach = "do something"
 	addVerify = "check something"
 	addResult = "report something"
 
@@ -192,7 +192,7 @@ func TestAddCommandPrettyOutput(t *testing.T) {
 	addDescription = ""
 	addParent = ""
 	addPretty = true
-	addAction = "do something"
+	addApproach = "do something"
 	addVerify = "check something"
 	addResult = "report something"
 
@@ -222,7 +222,7 @@ func TestAddCommandToDoneParent(t *testing.T) {
 	addDescription = ""
 	addParent = parent.ID
 	addPretty = false
-	addAction = "do something"
+	addApproach = "do something"
 	addVerify = "check something"
 	addResult = "report something"
 
@@ -239,7 +239,7 @@ func TestAddCommandInvalidParentID(t *testing.T) {
 	addParent = "invalid"
 	addDescription = ""
 	addPretty = false
-	addAction = "do something"
+	addApproach = "do something"
 	addVerify = "check something"
 	addResult = "report something"
 
@@ -257,7 +257,7 @@ func TestAddCommand_WithoutStructuredFlags(t *testing.T) {
 	addDescription = ""
 	addParent = ""
 	addPretty = false
-	addAction = ""
+	addApproach = ""
 	addVerify = ""
 	addResult = ""
 
@@ -275,8 +275,8 @@ func TestAddCommand_WithoutStructuredFlags(t *testing.T) {
 
 	task := tasks[0]
 	assert.Equal(t, "Quick Task", task.Name)
-	assert.Equal(t, models.StatusTodo, task.Status)
-	assert.Empty(t, task.Action)
+	assert.Equal(t, models.StatusCaptured, task.Status)
+	assert.Empty(t, task.Approach)
 	assert.Empty(t, task.Verify)
 	assert.Empty(t, task.Result)
 	assert.False(t, task.HasStructuredFields())

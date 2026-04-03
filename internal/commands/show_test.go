@@ -20,7 +20,7 @@ func TestShowCommand(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create a test task
-	taskID := createTestTask(t, store, "Test Task", models.StatusTodo, nil)
+	taskID := createTestTask(t, store, "Test Task", models.StatusCaptured, nil)
 
 	// Reset flag
 	showPretty = false
@@ -38,7 +38,7 @@ func TestShowCommandWithAllFields(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create parent task
-	parentID := createTestTask(t, store, "Parent Task", models.StatusTodo, nil)
+	parentID := createTestTask(t, store, "Parent Task", models.StatusCaptured, nil)
 
 	// Create task with parent
 	taskID := createTestTask(t, store, "Child Task", models.StatusInProgress, &parentID)
@@ -105,7 +105,7 @@ func TestShowCommand_BlockedByEnriched(t *testing.T) {
 	blocked := &models.Task{
 		ID:        "aaab",
 		Name:      "Implement API",
-		Status:    models.StatusTodo,
+		Status:    models.StatusCaptured,
 		BlockedBy: []string{"aaaa"},
 		Created:   now,
 		Updated:   now,
@@ -175,7 +175,7 @@ func TestShowCommand_BlocksReverseLookup(t *testing.T) {
 	blocked1 := &models.Task{
 		ID:        "aaab",
 		Name:      "Implement API",
-		Status:    models.StatusTodo,
+		Status:    models.StatusCaptured,
 		BlockedBy: []string{"aaaa"},
 		Created:   now,
 		Updated:   now,
@@ -185,7 +185,7 @@ func TestShowCommand_BlocksReverseLookup(t *testing.T) {
 	blocked2 := &models.Task{
 		ID:        "aaac",
 		Name:      "Write tests",
-		Status:    models.StatusTodo,
+		Status:    models.StatusCaptured,
 		BlockedBy: []string{"aaaa"},
 		Created:   now,
 		Updated:   now,
@@ -233,15 +233,15 @@ func TestShowCommand_StructuredFields(t *testing.T) {
 
 	now := time.Now()
 	task := &models.Task{
-		ID:      "aaaa",
-		Name:    "Structured Task",
-		Status:  models.StatusDone,
-		Action:  "run migrations",
-		Verify:  "check table exists",
-		Result:  "migration output",
-		Outcome: "table created successfully",
-		Created: now,
-		Updated: now,
+		ID:       "aaaa",
+		Name:     "Structured Task",
+		Status:   models.StatusDone,
+		Approach: "run migrations",
+		Verify:   "check table exists",
+		Result:   "migration output",
+		Outcome:  "table created successfully",
+		Created:  now,
+		Updated:  now,
 	}
 	require.NoError(t, store.SaveTask(task))
 

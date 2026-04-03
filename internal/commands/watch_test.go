@@ -74,16 +74,16 @@ func TestDetectChangesAllDeleted(t *testing.T) {
 
 func TestFilterByStatus(t *testing.T) {
 	tasks := []models.Task{
-		{ID: "aaaa", Name: "Task 1", Status: models.StatusTodo},
+		{ID: "aaaa", Name: "Task 1", Status: models.StatusCaptured},
 		{ID: "aaab", Name: "Task 2", Status: models.StatusInProgress},
 		{ID: "aaac", Name: "Task 3", Status: models.StatusDone},
-		{ID: "aaad", Name: "Task 4", Status: models.StatusTodo},
+		{ID: "aaad", Name: "Task 4", Status: models.StatusCaptured},
 	}
 
-	filtered := filterByStatus(tasks, models.StatusTodo)
+	filtered := filterByStatus(tasks, models.StatusCaptured)
 	assert.Len(t, filtered, 2)
 	for _, task := range filtered {
-		assert.Equal(t, models.StatusTodo, task.Status)
+		assert.Equal(t, models.StatusCaptured, task.Status)
 	}
 
 	filtered = filterByStatus(tasks, models.StatusInProgress)
@@ -97,7 +97,7 @@ func TestFilterByStatus(t *testing.T) {
 
 func TestFilterByStatusEmpty(t *testing.T) {
 	tasks := []models.Task{
-		{ID: "aaaa", Name: "Task 1", Status: models.StatusTodo},
+		{ID: "aaaa", Name: "Task 1", Status: models.StatusCaptured},
 	}
 
 	filtered := filterByStatus(tasks, models.StatusDone)
@@ -121,15 +121,15 @@ func TestToTaskMap(t *testing.T) {
 
 func TestCountByStatus(t *testing.T) {
 	tasks := []models.Task{
-		{ID: "aaaa", Status: models.StatusTodo},
-		{ID: "aaab", Status: models.StatusTodo},
+		{ID: "aaaa", Status: models.StatusCaptured},
+		{ID: "aaab", Status: models.StatusCaptured},
 		{ID: "aaac", Status: models.StatusInProgress},
 		{ID: "aaad", Status: models.StatusDone},
 		{ID: "aaae", Status: models.StatusDone},
 		{ID: "aaaf", Status: models.StatusDone},
 	}
 
-	assert.Equal(t, 2, countByStatus(tasks, models.StatusTodo))
+	assert.Equal(t, 2, countByStatus(tasks, models.StatusCaptured))
 	assert.Equal(t, 1, countByStatus(tasks, models.StatusInProgress))
 	assert.Equal(t, 3, countByStatus(tasks, models.StatusDone))
 }

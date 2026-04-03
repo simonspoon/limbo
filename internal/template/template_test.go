@@ -169,10 +169,10 @@ func TestApply_WithParent(t *testing.T) {
 	parentID, err := store.GenerateTaskID()
 	require.NoError(t, err)
 	parent := &models.Task{
-		ID:     parentID,
-		Name:   "Root Project",
-		Action: "do", Verify: "check", Result: "report",
-		Status: models.StatusTodo,
+		ID:       parentID,
+		Name:     "Root Project",
+		Approach: "do", Verify: "check", Result: "report",
+		Status: models.StatusCaptured,
 	}
 	require.NoError(t, store.SaveTask(parent))
 
@@ -368,8 +368,8 @@ func TestApply_InvalidBlockedByReference(t *testing.T) {
 		Name:        "bad-ref",
 		Description: "Template with invalid blocked_by",
 		Tasks: []TaskTemplate{
-			{Name: "A", Action: "do", Verify: "check", Result: "done"},
-			{Name: "B", Action: "do", Verify: "check", Result: "done", BlockedBy: []string{"NonExistent"}},
+			{Name: "A", Approach: "do", Verify: "check", Result: "done"},
+			{Name: "B", Approach: "do", Verify: "check", Result: "done", BlockedBy: []string{"NonExistent"}},
 		},
 	}
 
@@ -406,13 +406,13 @@ func TestApply_DeeplyNested(t *testing.T) {
 		Description: "Deeply nested",
 		Tasks: []TaskTemplate{
 			{
-				Name: "Level 1", Action: "do", Verify: "check", Result: "done",
+				Name: "Level 1", Approach: "do", Verify: "check", Result: "done",
 				Children: []TaskTemplate{
 					{
-						Name: "Level 2", Action: "do", Verify: "check", Result: "done",
+						Name: "Level 2", Approach: "do", Verify: "check", Result: "done",
 						Children: []TaskTemplate{
-							{Name: "Level 3a", Action: "do", Verify: "check", Result: "done"},
-							{Name: "Level 3b", Action: "do", Verify: "check", Result: "done",
+							{Name: "Level 3a", Approach: "do", Verify: "check", Result: "done"},
+							{Name: "Level 3b", Approach: "do", Verify: "check", Result: "done",
 								BlockedBy: []string{"Level 3a"}},
 						},
 					},
@@ -480,7 +480,7 @@ func TestApply_TasksHaveTodoStatus(t *testing.T) {
 	tasks, err := store.LoadAll()
 	require.NoError(t, err)
 	for _, task := range tasks {
-		assert.Equal(t, models.StatusTodo, task.Status)
+		assert.Equal(t, models.StatusCaptured, task.Status)
 		assert.False(t, task.Created.IsZero())
 		assert.False(t, task.Updated.IsZero())
 	}
@@ -494,9 +494,9 @@ func TestRenderTree_ShowsHierarchy(t *testing.T) {
 		Description: "Test template",
 		Tasks: []TaskTemplate{
 			{
-				Name: "Parent", Action: "do", Verify: "check", Result: "done",
+				Name: "Parent", Approach: "do", Verify: "check", Result: "done",
 				Children: []TaskTemplate{
-					{Name: "Child", Action: "do", Verify: "check", Result: "done"},
+					{Name: "Child", Approach: "do", Verify: "check", Result: "done"},
 				},
 			},
 		},
@@ -513,8 +513,8 @@ func TestRenderTree_ShowsBlockedBy(t *testing.T) {
 		Name:        "test",
 		Description: "Test",
 		Tasks: []TaskTemplate{
-			{Name: "A", Action: "do", Verify: "check", Result: "done"},
-			{Name: "B", Action: "do", Verify: "check", Result: "done", BlockedBy: []string{"A"}},
+			{Name: "A", Approach: "do", Verify: "check", Result: "done"},
+			{Name: "B", Approach: "do", Verify: "check", Result: "done", BlockedBy: []string{"A"}},
 		},
 	}
 

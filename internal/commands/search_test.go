@@ -38,8 +38,8 @@ func TestSearchBasicMatch(t *testing.T) {
 	store, err := storage.NewStorage()
 	require.NoError(t, err)
 
-	createSearchTestTask(t, store, "Build login page", "", models.StatusTodo)
-	createSearchTestTask(t, store, "Fix database bug", "", models.StatusTodo)
+	createSearchTestTask(t, store, "Build login page", "", models.StatusCaptured)
+	createSearchTestTask(t, store, "Fix database bug", "", models.StatusCaptured)
 
 	resetSearchFlags()
 	err = runSearch(nil, []string{"login"})
@@ -53,7 +53,7 @@ func TestSearchNoMatch(t *testing.T) {
 	store, err := storage.NewStorage()
 	require.NoError(t, err)
 
-	createSearchTestTask(t, store, "Build login page", "", models.StatusTodo)
+	createSearchTestTask(t, store, "Build login page", "", models.StatusCaptured)
 
 	resetSearchFlags()
 	err = runSearch(nil, []string{"nonexistent"})
@@ -67,7 +67,7 @@ func TestSearchCaseInsensitive(t *testing.T) {
 	store, err := storage.NewStorage()
 	require.NoError(t, err)
 
-	createSearchTestTask(t, store, "Build Login Page", "", models.StatusTodo)
+	createSearchTestTask(t, store, "Build Login Page", "", models.StatusCaptured)
 
 	resetSearchFlags()
 
@@ -86,7 +86,7 @@ func TestSearchPartialMatch(t *testing.T) {
 	store, err := storage.NewStorage()
 	require.NoError(t, err)
 
-	createSearchTestTask(t, store, "Implement authentication", "", models.StatusTodo)
+	createSearchTestTask(t, store, "Implement authentication", "", models.StatusCaptured)
 
 	resetSearchFlags()
 	err = runSearch(nil, []string{"auth"})
@@ -100,8 +100,8 @@ func TestSearchMatchesDescription(t *testing.T) {
 	store, err := storage.NewStorage()
 	require.NoError(t, err)
 
-	createSearchTestTask(t, store, "Task one", "Handle user authentication", models.StatusTodo)
-	createSearchTestTask(t, store, "Task two", "Build the dashboard", models.StatusTodo)
+	createSearchTestTask(t, store, "Task one", "Handle user authentication", models.StatusCaptured)
+	createSearchTestTask(t, store, "Task two", "Build the dashboard", models.StatusCaptured)
 
 	resetSearchFlags()
 	err = runSearch(nil, []string{"authentication"})
@@ -115,7 +115,7 @@ func TestSearchPrettyOutput(t *testing.T) {
 	store, err := storage.NewStorage()
 	require.NoError(t, err)
 
-	createSearchTestTask(t, store, "Build login page", "", models.StatusTodo)
+	createSearchTestTask(t, store, "Build login page", "", models.StatusCaptured)
 	createSearchTestTask(t, store, "Fix login bug", "", models.StatusInProgress)
 
 	resetSearchFlags()
@@ -131,7 +131,7 @@ func TestSearchAllStatuses(t *testing.T) {
 	store, err := storage.NewStorage()
 	require.NoError(t, err)
 
-	createSearchTestTask(t, store, "Login todo", "", models.StatusTodo)
+	createSearchTestTask(t, store, "Login todo", "", models.StatusCaptured)
 	createSearchTestTask(t, store, "Login progress", "", models.StatusInProgress)
 	createSearchTestTask(t, store, "Login done", "", models.StatusDone)
 

@@ -21,7 +21,7 @@ func TestBlockCommand(t *testing.T) {
 	blocker := &models.Task{
 		ID:      "aaaa",
 		Name:    "Blocker Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -30,7 +30,7 @@ func TestBlockCommand(t *testing.T) {
 	blocked := &models.Task{
 		ID:      "aaab",
 		Name:    "Blocked Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -57,7 +57,7 @@ func TestBlockCommand_SelfBlock(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -80,7 +80,7 @@ func TestBlockCommand_CycleDetection(t *testing.T) {
 	taskA := &models.Task{
 		ID:      "aaaa",
 		Name:    "Task A",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -89,7 +89,7 @@ func TestBlockCommand_CycleDetection(t *testing.T) {
 	taskB := &models.Task{
 		ID:      "aaab",
 		Name:    "Task B",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -127,7 +127,7 @@ func TestBlockCommand_CannotBlockOnDone(t *testing.T) {
 	todoTask := &models.Task{
 		ID:      "aaab",
 		Name:    "Todo Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -150,7 +150,7 @@ func TestBlockCommand_AlreadyBlocked(t *testing.T) {
 	blocker := &models.Task{
 		ID:      "aaaa",
 		Name:    "Blocker",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -159,7 +159,7 @@ func TestBlockCommand_AlreadyBlocked(t *testing.T) {
 	blocked := &models.Task{
 		ID:        "aaab",
 		Name:      "Blocked",
-		Status:    models.StatusTodo,
+		Status:    models.StatusCaptured,
 		BlockedBy: []string{blocker.ID},
 		Created:   now,
 		Updated:   now,
@@ -183,7 +183,7 @@ func TestUnblockCommand(t *testing.T) {
 	blocker := &models.Task{
 		ID:      "aaaa",
 		Name:    "Blocker",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -192,7 +192,7 @@ func TestUnblockCommand(t *testing.T) {
 	blocked := &models.Task{
 		ID:        "aaab",
 		Name:      "Blocked",
-		Status:    models.StatusTodo,
+		Status:    models.StatusCaptured,
 		BlockedBy: []string{blocker.ID},
 		Created:   now,
 		Updated:   now,
@@ -219,7 +219,7 @@ func TestUnblockCommand_NotBlocked(t *testing.T) {
 	task1 := &models.Task{
 		ID:      "aaaa",
 		Name:    "Task 1",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -228,7 +228,7 @@ func TestUnblockCommand_NotBlocked(t *testing.T) {
 	task2 := &models.Task{
 		ID:      "aaab",
 		Name:    "Task 2",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -251,7 +251,7 @@ func TestNextCommand_SkipsBlockedTasks(t *testing.T) {
 	blocker := &models.Task{
 		ID:      "aaaa",
 		Name:    "Blocker Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -260,7 +260,7 @@ func TestNextCommand_SkipsBlockedTasks(t *testing.T) {
 	blocked := &models.Task{
 		ID:        "aaab",
 		Name:      "Blocked Task",
-		Status:    models.StatusTodo,
+		Status:    models.StatusCaptured,
 		BlockedBy: []string{blocker.ID},
 		Created:   now.Add(time.Millisecond),
 		Updated:   now.Add(time.Millisecond),
@@ -286,7 +286,7 @@ func TestStatusCommand_AutoRemovesBlockedBy(t *testing.T) {
 	blocker := &models.Task{
 		ID:      "aaaa",
 		Name:    "Blocker",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -295,7 +295,7 @@ func TestStatusCommand_AutoRemovesBlockedBy(t *testing.T) {
 	blocked := &models.Task{
 		ID:        "aaab",
 		Name:      "Blocked",
-		Status:    models.StatusTodo,
+		Status:    models.StatusCaptured,
 		BlockedBy: []string{blocker.ID},
 		Created:   now,
 		Updated:   now,

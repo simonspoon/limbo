@@ -28,11 +28,11 @@ func TestSaveTask_SplitsContentToContextFile(t *testing.T) {
 		ID:          "abcd",
 		Name:        "Test Task",
 		Description: "A test description",
-		Action:      "Do the thing",
+		Approach:    "Do the thing",
 		Verify:      "Check it worked",
 		Result:      "Report back",
 		Outcome:     "It worked",
-		Status:      models.StatusTodo,
+		Status:      models.StatusCaptured,
 		Created:     now,
 		Updated:     now,
 	}
@@ -50,9 +50,9 @@ func TestSaveTask_SplitsContentToContextFile(t *testing.T) {
 	indexTask := rawStore.Tasks[0]
 	assert.Equal(t, "abcd", indexTask.ID)
 	assert.Equal(t, "Test Task", indexTask.Name)
-	assert.Equal(t, models.StatusTodo, indexTask.Status)
+	assert.Equal(t, models.StatusCaptured, indexTask.Status)
 	assert.Equal(t, "", indexTask.Description)
-	assert.Equal(t, "", indexTask.Action)
+	assert.Equal(t, "", indexTask.Approach)
 	assert.Equal(t, "", indexTask.Verify)
 	assert.Equal(t, "", indexTask.Result)
 	assert.Equal(t, "", indexTask.Outcome)
@@ -62,7 +62,7 @@ func TestSaveTask_SplitsContentToContextFile(t *testing.T) {
 	sections, err := store.ReadContext("abcd")
 	require.NoError(t, err)
 	assert.Equal(t, "A test description", sections["Description"])
-	assert.Equal(t, "Do the thing", sections["Action"])
+	assert.Equal(t, "Do the thing", sections["Approach"])
 	assert.Equal(t, "Check it worked", sections["Verify"])
 	assert.Equal(t, "Report back", sections["Result"])
 	assert.Equal(t, "It worked", sections["Outcome"])
@@ -76,10 +76,10 @@ func TestLoadTask_MergesContextFile(t *testing.T) {
 		ID:          "abcd",
 		Name:        "Test Task",
 		Description: "A test description",
-		Action:      "Do the thing",
+		Approach:    "Do the thing",
 		Verify:      "Check it worked",
 		Result:      "Report back",
-		Status:      models.StatusTodo,
+		Status:      models.StatusCaptured,
 		Created:     now,
 		Updated:     now,
 	}
@@ -91,7 +91,7 @@ func TestLoadTask_MergesContextFile(t *testing.T) {
 	assert.Equal(t, "abcd", loaded.ID)
 	assert.Equal(t, "Test Task", loaded.Name)
 	assert.Equal(t, "A test description", loaded.Description)
-	assert.Equal(t, "Do the thing", loaded.Action)
+	assert.Equal(t, "Do the thing", loaded.Approach)
 	assert.Equal(t, "Check it worked", loaded.Verify)
 	assert.Equal(t, "Report back", loaded.Result)
 }
@@ -104,9 +104,9 @@ func TestLoadAllIndex_ReturnsMetadataOnly(t *testing.T) {
 		ID:          "abcd",
 		Name:        "Test Task",
 		Description: "A test description",
-		Action:      "Do the thing",
+		Approach:    "Do the thing",
 		Verify:      "Check it worked",
-		Status:      models.StatusTodo,
+		Status:      models.StatusCaptured,
 		Created:     now,
 		Updated:     now,
 	}
@@ -119,9 +119,9 @@ func TestLoadAllIndex_ReturnsMetadataOnly(t *testing.T) {
 	// Index tasks should have metadata but no content
 	assert.Equal(t, "abcd", tasks[0].ID)
 	assert.Equal(t, "Test Task", tasks[0].Name)
-	assert.Equal(t, models.StatusTodo, tasks[0].Status)
+	assert.Equal(t, models.StatusCaptured, tasks[0].Status)
 	assert.Equal(t, "", tasks[0].Description)
-	assert.Equal(t, "", tasks[0].Action)
+	assert.Equal(t, "", tasks[0].Approach)
 	assert.Equal(t, "", tasks[0].Verify)
 	assert.Nil(t, tasks[0].Notes)
 }
@@ -136,7 +136,7 @@ func TestRoundTrip_AllFields(t *testing.T) {
 		ID:          "abcd",
 		Name:        "Full Task",
 		Description: "A thorough description\nwith multiple lines",
-		Action:      "Step 1: Do X\nStep 2: Do Y",
+		Approach:    "Step 1: Do X\nStep 2: Do Y",
 		Verify:      "Run `go test ./...`",
 		Result:      "All tests pass",
 		Outcome:     "Feature shipped",
@@ -166,7 +166,7 @@ func TestRoundTrip_AllFields(t *testing.T) {
 	assert.Equal(t, task.ID, loaded.ID)
 	assert.Equal(t, task.Name, loaded.Name)
 	assert.Equal(t, task.Description, loaded.Description)
-	assert.Equal(t, task.Action, loaded.Action)
+	assert.Equal(t, task.Approach, loaded.Approach)
 	assert.Equal(t, task.Verify, loaded.Verify)
 	assert.Equal(t, task.Result, loaded.Result)
 	assert.Equal(t, task.Outcome, loaded.Outcome)
@@ -192,7 +192,7 @@ func TestSaveTask_EmptyContent_NoContextFile(t *testing.T) {
 	task := &models.Task{
 		ID:      "abcd",
 		Name:    "Metadata Only",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -211,8 +211,8 @@ func TestSaveTask_ClearContent_DeletesContextFile(t *testing.T) {
 		ID:          "abcd",
 		Name:        "Test Task",
 		Description: "Has a description",
-		Action:      "Do something",
-		Status:      models.StatusTodo,
+		Approach:    "Do something",
+		Status:      models.StatusCaptured,
 		Created:     now,
 		Updated:     now,
 	}
@@ -224,7 +224,7 @@ func TestSaveTask_ClearContent_DeletesContextFile(t *testing.T) {
 
 	// Clear all content fields and save again
 	task.Description = ""
-	task.Action = ""
+	task.Approach = ""
 	require.NoError(t, store.SaveTask(task))
 
 	// Context directory should be removed
@@ -235,7 +235,7 @@ func TestSaveTask_ClearContent_DeletesContextFile(t *testing.T) {
 	loaded, err := store.LoadTask("abcd")
 	require.NoError(t, err)
 	assert.Equal(t, "", loaded.Description)
-	assert.Equal(t, "", loaded.Action)
+	assert.Equal(t, "", loaded.Approach)
 }
 
 func TestSaveTask_DoesNotMutateOriginal(t *testing.T) {
@@ -246,11 +246,11 @@ func TestSaveTask_DoesNotMutateOriginal(t *testing.T) {
 		ID:          "abcd",
 		Name:        "Test Task",
 		Description: "A description",
-		Action:      "Do something",
+		Approach:    "Do something",
 		Notes: []models.Note{
 			{Content: "A note", Timestamp: now},
 		},
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -258,7 +258,7 @@ func TestSaveTask_DoesNotMutateOriginal(t *testing.T) {
 
 	// Verify the original task pointer still has its content fields
 	assert.Equal(t, "A description", task.Description)
-	assert.Equal(t, "Do something", task.Action)
+	assert.Equal(t, "Do something", task.Approach)
 	require.Len(t, task.Notes, 1)
 	assert.Equal(t, "A note", task.Notes[0].Content)
 }
@@ -272,8 +272,8 @@ func TestLoadAll_MergesAllContextFiles(t *testing.T) {
 			ID:          id,
 			Name:        "Task " + id,
 			Description: "Description for " + id,
-			Action:      "Action for " + id,
-			Status:      models.StatusTodo,
+			Approach:    "Action for " + id,
+			Status:      models.StatusCaptured,
 			Created:     now,
 			Updated:     now,
 		}
@@ -286,7 +286,7 @@ func TestLoadAll_MergesAllContextFiles(t *testing.T) {
 
 	for _, task := range tasks {
 		assert.Equal(t, "Description for "+task.ID, task.Description)
-		assert.Equal(t, "Action for "+task.ID, task.Action)
+		assert.Equal(t, "Action for "+task.ID, task.Approach)
 	}
 }
 
@@ -309,5 +309,5 @@ func TestInit_Version5(t *testing.T) {
 	storePath := filepath.Join(dir, LimboDir, TasksFile)
 	data, err := os.ReadFile(storePath)
 	require.NoError(t, err)
-	assert.Contains(t, string(data), `"version": "5.0.0"`)
+	assert.Contains(t, string(data), `"version": "6.0.0"`)
 }

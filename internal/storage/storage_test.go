@@ -54,7 +54,7 @@ func TestSaveAndLoadTask(t *testing.T) {
 		ID:          "aaaa",
 		Name:        "Test Task",
 		Description: "Test Description",
-		Status:      models.StatusTodo,
+		Status:      models.StatusCaptured,
 		Created:     now,
 		Updated:     now,
 	}
@@ -90,7 +90,7 @@ func TestLoadAll(t *testing.T) {
 		task := &models.Task{
 			ID:      id,
 			Name:    "Test Task",
-			Status:  models.StatusTodo,
+			Status:  models.StatusCaptured,
 			Created: now,
 			Updated: now,
 		}
@@ -117,7 +117,7 @@ func TestDeleteTask(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Task to Delete",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -148,7 +148,7 @@ func TestDeleteTasks(t *testing.T) {
 		task := &models.Task{
 			ID:      id,
 			Name:    "Task",
-			Status:  models.StatusTodo,
+			Status:  models.StatusCaptured,
 			Created: now,
 			Updated: now,
 		}
@@ -181,7 +181,7 @@ func TestTaskWithParent(t *testing.T) {
 	parent := &models.Task{
 		ID:      parentID,
 		Name:    "Parent Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -192,7 +192,7 @@ func TestTaskWithParent(t *testing.T) {
 		ID:      "aaab",
 		Name:    "Child Task",
 		Parent:  &parentID,
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -220,7 +220,7 @@ func TestGetChildren(t *testing.T) {
 	parent := &models.Task{
 		ID:      parentID,
 		Name:    "Parent",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -233,7 +233,7 @@ func TestGetChildren(t *testing.T) {
 			ID:      id,
 			Name:    "Child",
 			Parent:  &parentID,
-			Status:  models.StatusTodo,
+			Status:  models.StatusCaptured,
 			Created: now,
 			Updated: now,
 		}
@@ -267,7 +267,7 @@ func TestGetNextTask(t *testing.T) {
 	task1 := &models.Task{
 		ID:      "aaaa",
 		Name:    "First Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: baseTime,
 		Updated: baseTime,
 	}
@@ -277,7 +277,7 @@ func TestGetNextTask(t *testing.T) {
 	task2 := &models.Task{
 		ID:      "aaab",
 		Name:    "Second Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: time.Now(),
 		Updated: time.Now(),
 	}
@@ -345,7 +345,7 @@ func TestGetNextTask_DepthFirst(t *testing.T) {
 		ID:      "aaac",
 		Name:    "A2",
 		Parent:  &featureAID,
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: baseTime.Add(2 * time.Millisecond),
 		Updated: baseTime.Add(2 * time.Millisecond),
 	}
@@ -367,7 +367,7 @@ func TestGetNextTask_DepthFirst(t *testing.T) {
 		ID:      "aabb",
 		Name:    "A1b",
 		Parent:  &a1ID,
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: baseTime.Add(11 * time.Millisecond),
 		Updated: baseTime.Add(11 * time.Millisecond),
 	}
@@ -378,7 +378,7 @@ func TestGetNextTask_DepthFirst(t *testing.T) {
 		ID:      "aabc",
 		Name:    "A1c",
 		Parent:  &a1ID,
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: baseTime.Add(12 * time.Millisecond),
 		Updated: baseTime.Add(12 * time.Millisecond),
 	}
@@ -465,7 +465,7 @@ func TestGetNextTask_WalksUpToRoot(t *testing.T) {
 	taskB := &models.Task{
 		ID:      "aaab",
 		Name:    "Task B",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now.Add(time.Millisecond),
 		Updated: now.Add(time.Millisecond),
 	}
@@ -505,7 +505,7 @@ func TestHasUndoneChildren(t *testing.T) {
 	parent := &models.Task{
 		ID:      parentID,
 		Name:    "Parent",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -521,7 +521,7 @@ func TestHasUndoneChildren(t *testing.T) {
 		ID:      "aaab",
 		Name:    "Child",
 		Parent:  &parentID,
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -579,7 +579,7 @@ func TestHasUndoneChildrenRecursive(t *testing.T) {
 	child := &models.Task{
 		ID:      "aaac",
 		Name:    "Child",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Parent:  &parentID,
 		Created: now,
 		Updated: now,
@@ -782,7 +782,7 @@ func TestDeleteTaskWithMultipleTasks(t *testing.T) {
 		task := &models.Task{
 			ID:      id,
 			Name:    "Task",
-			Status:  models.StatusTodo,
+			Status:  models.StatusCaptured,
 			Created: now,
 			Updated: now,
 		}
@@ -846,7 +846,7 @@ func TestMigrateFromV3(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, tasks, 1)
 	assert.Equal(t, "Legacy Task", tasks[0].Name)
-	assert.Empty(t, tasks[0].Action)
+	assert.Empty(t, tasks[0].Approach)
 	assert.Empty(t, tasks[0].Verify)
 	assert.Empty(t, tasks[0].Result)
 
@@ -858,7 +858,7 @@ func TestMigrateFromV3(t *testing.T) {
 	// Verify version was bumped in the file
 	data, err := os.ReadFile(tasksPath)
 	require.NoError(t, err)
-	assert.Contains(t, string(data), `"version": "4.0.0"`)
+	assert.Contains(t, string(data), `"version": "6.0.0"`)
 }
 
 func TestIsBlocked(t *testing.T) {
@@ -875,7 +875,7 @@ func TestIsBlocked(t *testing.T) {
 	blocker := &models.Task{
 		ID:      "aaaa",
 		Name:    "Blocker",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -885,7 +885,7 @@ func TestIsBlocked(t *testing.T) {
 	blocked := &models.Task{
 		ID:        "aaab",
 		Name:      "Blocked",
-		Status:    models.StatusTodo,
+		Status:    models.StatusCaptured,
 		BlockedBy: []string{"aaaa"},
 		Created:   now,
 		Updated:   now,
@@ -910,7 +910,7 @@ func TestIsBlocked(t *testing.T) {
 	noDeps := &models.Task{
 		ID:      "aaac",
 		Name:    "No deps",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -922,7 +922,7 @@ func TestIsBlocked(t *testing.T) {
 	ghostBlocked := &models.Task{
 		ID:        "aaad",
 		Name:      "Ghost blocked",
-		Status:    models.StatusTodo,
+		Status:    models.StatusCaptured,
 		BlockedBy: []string{"zzzz"},
 		Created:   now,
 		Updated:   now,
@@ -943,9 +943,9 @@ func TestWouldCreateCycle(t *testing.T) {
 	now := time.Now()
 
 	// A blocks B, B blocks C
-	a := &models.Task{ID: "aaaa", Name: "A", Status: models.StatusTodo, Created: now, Updated: now}
-	b := &models.Task{ID: "aaab", Name: "B", Status: models.StatusTodo, BlockedBy: []string{"aaaa"}, Created: now, Updated: now}
-	c := &models.Task{ID: "aaac", Name: "C", Status: models.StatusTodo, BlockedBy: []string{"aaab"}, Created: now, Updated: now}
+	a := &models.Task{ID: "aaaa", Name: "A", Status: models.StatusCaptured, Created: now, Updated: now}
+	b := &models.Task{ID: "aaab", Name: "B", Status: models.StatusCaptured, BlockedBy: []string{"aaaa"}, Created: now, Updated: now}
+	c := &models.Task{ID: "aaac", Name: "C", Status: models.StatusCaptured, BlockedBy: []string{"aaab"}, Created: now, Updated: now}
 
 	require.NoError(t, store.SaveTask(a))
 	require.NoError(t, store.SaveTask(b))
@@ -957,7 +957,7 @@ func TestWouldCreateCycle(t *testing.T) {
 	assert.True(t, wouldCycle)
 
 	// Adding A blocks C is the existing direction — no cycle from adding D blocks A
-	d := &models.Task{ID: "aaad", Name: "D", Status: models.StatusTodo, Created: now, Updated: now}
+	d := &models.Task{ID: "aaad", Name: "D", Status: models.StatusCaptured, Created: now, Updated: now}
 	require.NoError(t, store.SaveTask(d))
 
 	wouldCycle, err = store.WouldCreateCycle("aaad", "aaaa")
@@ -987,9 +987,9 @@ func TestRemoveFromAllBlockedBy(t *testing.T) {
 
 	// A blocks B and C
 	a := &models.Task{ID: "aaaa", Name: "A", Status: models.StatusDone, Created: now, Updated: now}
-	b := &models.Task{ID: "aaab", Name: "B", Status: models.StatusTodo, BlockedBy: []string{"aaaa", "aaac"}, Created: now, Updated: now}
-	c := &models.Task{ID: "aaac", Name: "C", Status: models.StatusTodo, BlockedBy: []string{"aaaa"}, Created: now, Updated: now}
-	d := &models.Task{ID: "aaad", Name: "D", Status: models.StatusTodo, Created: now, Updated: now}
+	b := &models.Task{ID: "aaab", Name: "B", Status: models.StatusCaptured, BlockedBy: []string{"aaaa", "aaac"}, Created: now, Updated: now}
+	c := &models.Task{ID: "aaac", Name: "C", Status: models.StatusCaptured, BlockedBy: []string{"aaaa"}, Created: now, Updated: now}
+	d := &models.Task{ID: "aaad", Name: "D", Status: models.StatusCaptured, Created: now, Updated: now}
 
 	require.NoError(t, store.SaveTask(a))
 	require.NoError(t, store.SaveTask(b))
@@ -1054,7 +1054,7 @@ func TestGenerateTaskID_Collision(t *testing.T) {
 		task := &models.Task{
 			ID:      id,
 			Name:    "Task",
-			Status:  models.StatusTodo,
+			Status:  models.StatusCaptured,
 			Created: time.Now(),
 			Updated: time.Now(),
 		}
@@ -1461,7 +1461,7 @@ func TestGenerateTaskID_ArchiveCollision(t *testing.T) {
 		task := &models.Task{
 			ID:      id,
 			Name:    "Generated",
-			Status:  models.StatusTodo,
+			Status:  models.StatusCaptured,
 			Created: now,
 			Updated: now,
 		}

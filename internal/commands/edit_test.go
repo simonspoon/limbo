@@ -17,7 +17,7 @@ func executeEdit(args ...string) error {
 	// Reset package-level vars
 	editName = ""
 	editDescription = ""
-	editAction = ""
+	editApproach = ""
 	editVerify = ""
 	editResult = ""
 	editPretty = false
@@ -30,7 +30,7 @@ func executeEdit(args ...string) error {
 	}
 	cmd.Flags().StringVar(&editName, "name", "", "Task name")
 	cmd.Flags().StringVarP(&editDescription, "description", "d", "", "Task description")
-	cmd.Flags().StringVar(&editAction, "action", "", "What concrete work to perform")
+	cmd.Flags().StringVar(&editApproach, "action", "", "What concrete work to perform")
 	cmd.Flags().StringVar(&editVerify, "verify", "", "How to confirm the action succeeded")
 	cmd.Flags().StringVar(&editResult, "result", "", "Template for what to report back")
 	cmd.Flags().BoolVar(&editPretty, "pretty", false, "Pretty print output")
@@ -49,7 +49,7 @@ func TestEditCommand_Name(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Original Name",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -76,7 +76,7 @@ func TestEditCommand_Description(t *testing.T) {
 		ID:          "aaaa",
 		Name:        "Test Task",
 		Description: "Old description",
-		Status:      models.StatusTodo,
+		Status:      models.StatusCaptured,
 		Created:     now,
 		Updated:     now,
 	}
@@ -99,14 +99,14 @@ func TestEditCommand_Action(t *testing.T) {
 
 	now := time.Now()
 	task := &models.Task{
-		ID:      "aaaa",
-		Name:    "Test Task",
-		Action:  "Old action",
-		Verify:  "Old verify",
-		Result:  "Old result",
-		Status:  models.StatusTodo,
-		Created: now,
-		Updated: now,
+		ID:       "aaaa",
+		Name:     "Test Task",
+		Approach: "Old action",
+		Verify:   "Old verify",
+		Result:   "Old result",
+		Status:   models.StatusCaptured,
+		Created:  now,
+		Updated:  now,
 	}
 	require.NoError(t, store.SaveTask(task))
 
@@ -115,7 +115,7 @@ func TestEditCommand_Action(t *testing.T) {
 
 	updated, err := store.LoadTask("aaaa")
 	require.NoError(t, err)
-	assert.Equal(t, "New action", updated.Action)
+	assert.Equal(t, "New action", updated.Approach)
 	// Unchanged fields should remain
 	assert.Equal(t, "Old verify", updated.Verify)
 	assert.Equal(t, "Old result", updated.Result)
@@ -131,14 +131,14 @@ func TestEditCommand_MultipleFields(t *testing.T) {
 
 	now := time.Now()
 	task := &models.Task{
-		ID:      "aaaa",
-		Name:    "Test Task",
-		Action:  "Old action",
-		Verify:  "Old verify",
-		Result:  "Old result",
-		Status:  models.StatusTodo,
-		Created: now,
-		Updated: now,
+		ID:       "aaaa",
+		Name:     "Test Task",
+		Approach: "Old action",
+		Verify:   "Old verify",
+		Result:   "Old result",
+		Status:   models.StatusCaptured,
+		Created:  now,
+		Updated:  now,
 	}
 	require.NoError(t, store.SaveTask(task))
 
@@ -148,7 +148,7 @@ func TestEditCommand_MultipleFields(t *testing.T) {
 	updated, err := store.LoadTask("aaaa")
 	require.NoError(t, err)
 	assert.Equal(t, "Updated Task", updated.Name)
-	assert.Equal(t, "New action", updated.Action)
+	assert.Equal(t, "New action", updated.Approach)
 	assert.Equal(t, "New verify", updated.Verify)
 	// Unchanged fields
 	assert.Equal(t, "Old result", updated.Result)
@@ -165,7 +165,7 @@ func TestEditCommand_NoFlags(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -205,7 +205,7 @@ func TestEditCommand_CaseInsensitiveID(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -230,7 +230,7 @@ func TestEditCommand_PrettyOutput(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -256,7 +256,7 @@ func TestEditCommand_ClearDescription(t *testing.T) {
 		ID:          "aaaa",
 		Name:        "Test Task",
 		Description: "Has a description",
-		Status:      models.StatusTodo,
+		Status:      models.StatusCaptured,
 		Created:     now,
 		Updated:     now,
 	}

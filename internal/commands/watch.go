@@ -207,7 +207,7 @@ func clearAndRender(tasks []models.Task, rawMode bool) {
 	// Header
 	fmt.Fprintf(&buf, "limbo watch - %s\n", time.Now().Format("15:04:05"))
 	fmt.Fprintf(&buf, "Tasks: %d todo, %d in-progress, %d done\n\n",
-		countByStatus(tasks, models.StatusTodo),
+		countByStatus(tasks, models.StatusCaptured),
 		countByStatus(tasks, models.StatusInProgress),
 		countByStatus(tasks, models.StatusDone))
 

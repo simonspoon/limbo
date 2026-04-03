@@ -17,7 +17,7 @@ var statusOutcome string
 var statusCmd = &cobra.Command{
 	Use:   "status <id> <status>",
 	Short: "Update task status",
-	Long:  `Update the status of a task. Valid statuses: todo, in-progress, done`,
+	Long:  `Update the status of a task. Valid statuses: captured, refined, planned, ready, in-progress, in-review, done`,
 	Args:  cobra.ExactArgs(2),
 	RunE:  runStatus,
 }
@@ -39,7 +39,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 
 	// Validate status
 	if !models.IsValidStatus(newStatus) {
-		return fmt.Errorf("invalid status %q. Must be: todo, in-progress, done", newStatus)
+		return fmt.Errorf("invalid status %q. Must be: captured, refined, planned, ready, in-progress, in-review, done", newStatus)
 	}
 
 	// Load storage

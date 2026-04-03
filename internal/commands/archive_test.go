@@ -166,7 +166,7 @@ func TestArchiveRestore_IDCollision(t *testing.T) {
 	conflicting := &models.Task{
 		ID:      "aaaa",
 		Name:    "Active Conflicting",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -233,7 +233,7 @@ func TestArchiveRestore_PreservesParentWhenExists(t *testing.T) {
 	parent := &models.Task{
 		ID:      parentID,
 		Name:    "Parent",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -314,7 +314,7 @@ func TestArchiveRestore_KeepsValidBlockedBy(t *testing.T) {
 	blocker := &models.Task{
 		ID:      "bbbb",
 		Name:    "Blocker",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -427,7 +427,7 @@ func TestArchiveRestore_CreatesContextDir(t *testing.T) {
 		ID:          "aaaa",
 		Name:        "Task With Content",
 		Description: "Detailed description",
-		Action:      "Do something",
+		Approach:    "Do something",
 		Verify:      "Verify it works",
 		Status:      models.StatusDone,
 		Created:     now,
@@ -461,7 +461,7 @@ func TestArchiveRestore_CreatesContextDir(t *testing.T) {
 	restored, err := store.LoadTask("aaaa")
 	require.NoError(t, err)
 	assert.Equal(t, "Detailed description", restored.Description)
-	assert.Equal(t, "Do something", restored.Action)
+	assert.Equal(t, "Do something", restored.Approach)
 	assert.Equal(t, "Verify it works", restored.Verify)
 }
 

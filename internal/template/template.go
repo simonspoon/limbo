@@ -30,7 +30,7 @@ type Template struct {
 // TaskTemplate represents a single task within a template.
 type TaskTemplate struct {
 	Name      string         `yaml:"name"`
-	Action    string         `yaml:"action"`
+	Approach  string         `yaml:"action"`
 	Verify    string         `yaml:"verify"`
 	Result    string         `yaml:"result"`
 	BlockedBy []string       `yaml:"blocked_by,omitempty"`
@@ -210,15 +210,15 @@ func createTasks(store *storage.Storage, tasks []TaskTemplate, parentID string, 
 
 		now := time.Now()
 		task := &models.Task{
-			ID:      taskID,
-			Name:    tt.Name,
-			Action:  tt.Action,
-			Verify:  tt.Verify,
-			Result:  tt.Result,
-			Parent:  parent,
-			Status:  models.StatusTodo,
-			Created: now,
-			Updated: now,
+			ID:       taskID,
+			Name:     tt.Name,
+			Approach: tt.Approach,
+			Verify:   tt.Verify,
+			Result:   tt.Result,
+			Parent:   parent,
+			Status:   models.StatusCaptured,
+			Created:  now,
+			Updated:  now,
 		}
 
 		if err := store.SaveTask(task); err != nil {

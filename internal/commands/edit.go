@@ -14,7 +14,7 @@ import (
 var (
 	editName        string
 	editDescription string
-	editAction      string
+	editApproach    string
 	editVerify      string
 	editResult      string
 	editPretty      bool
@@ -31,7 +31,7 @@ var editCmd = &cobra.Command{
 func init() {
 	editCmd.Flags().StringVar(&editName, "name", "", "Task name")
 	editCmd.Flags().StringVarP(&editDescription, "description", "d", "", "Task description")
-	editCmd.Flags().StringVar(&editAction, "action", "", "What concrete work to perform")
+	editCmd.Flags().StringVar(&editApproach, "action", "", "What concrete work to perform")
 	editCmd.Flags().StringVar(&editVerify, "verify", "", "How to confirm the action succeeded")
 	editCmd.Flags().StringVar(&editResult, "result", "", "Template for what to report back")
 	editCmd.Flags().BoolVar(&editPretty, "pretty", false, "Pretty print output")
@@ -49,7 +49,7 @@ func applyEditFlags(cmd *cobra.Command, task *models.Task) bool {
 		changed = true
 	}
 	if cmd.Flags().Changed("action") {
-		task.Action = editAction
+		task.Approach = editApproach
 		changed = true
 	}
 	if cmd.Flags().Changed("verify") {

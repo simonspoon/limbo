@@ -32,7 +32,7 @@ func TestPruneCommand_NoCompletedTasks(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Todo Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -77,7 +77,7 @@ func TestPruneCommand_ArchivesCompletedTasks(t *testing.T) {
 	todoTask := &models.Task{
 		ID:      "aaab",
 		Name:    "Todo Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -127,7 +127,7 @@ func TestPruneCommand_SkipsTasksWithUndoneChildren(t *testing.T) {
 	child := &models.Task{
 		ID:      "aaab",
 		Name:    "Todo Child",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Parent:  &parentID,
 		Created: now,
 		Updated: now,
@@ -282,7 +282,7 @@ func TestPruneCommand_CleansUpContextDirs(t *testing.T) {
 		ID:          "aaaa",
 		Name:        "Done With Content 1",
 		Description: "Description one",
-		Action:      "Action one",
+		Approach:    "Action one",
 		Status:      models.StatusDone,
 		Created:     now,
 		Updated:     now,
@@ -290,13 +290,13 @@ func TestPruneCommand_CleansUpContextDirs(t *testing.T) {
 	require.NoError(t, store.SaveTask(task1))
 
 	task2 := &models.Task{
-		ID:      "bbbb",
-		Name:    "Done With Content 2",
-		Action:  "Action two",
-		Verify:  "Verify two",
-		Status:  models.StatusDone,
-		Created: now,
-		Updated: now,
+		ID:       "bbbb",
+		Name:     "Done With Content 2",
+		Approach: "Action two",
+		Verify:   "Verify two",
+		Status:   models.StatusDone,
+		Created:  now,
+		Updated:  now,
 	}
 	require.NoError(t, store.SaveTask(task2))
 
@@ -331,7 +331,7 @@ func TestPruneCommand_ArchivesWithContent(t *testing.T) {
 		ID:          "aaaa",
 		Name:        "Done With Content",
 		Description: "A detailed description",
-		Action:      "Do the thing",
+		Approach:    "Do the thing",
 		Verify:      "Check the thing",
 		Result:      "Expected result",
 		Status:      models.StatusDone,
@@ -350,7 +350,7 @@ func TestPruneCommand_ArchivesWithContent(t *testing.T) {
 	require.Len(t, archived, 1)
 	assert.Equal(t, "aaaa", archived[0].ID)
 	assert.Equal(t, "A detailed description", archived[0].Description)
-	assert.Equal(t, "Do the thing", archived[0].Action)
+	assert.Equal(t, "Do the thing", archived[0].Approach)
 	assert.Equal(t, "Check the thing", archived[0].Verify)
 	assert.Equal(t, "Expected result", archived[0].Result)
 }

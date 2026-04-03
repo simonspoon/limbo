@@ -33,7 +33,7 @@ func TestTreeCommand_SingleTask(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Single Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -60,7 +60,7 @@ func TestTreeCommand_SimpleHierarchy(t *testing.T) {
 	parent := &models.Task{
 		ID:      parentID,
 		Name:    "Parent Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -97,7 +97,7 @@ func TestTreeCommand_ComplexHierarchy(t *testing.T) {
 	root1 := &models.Task{
 		ID:      root1ID,
 		Name:    "Root 1",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -107,7 +107,7 @@ func TestTreeCommand_ComplexHierarchy(t *testing.T) {
 		ID:      "aaab",
 		Name:    "Child 1",
 		Parent:  &root1ID,
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -128,7 +128,7 @@ func TestTreeCommand_ComplexHierarchy(t *testing.T) {
 		ID:      "aaad",
 		Name:    "Grandchild 1",
 		Parent:  &child2ID,
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -156,7 +156,7 @@ func TestTreeCommand_MultipleRoots(t *testing.T) {
 		task := &models.Task{
 			ID:      id,
 			Name:    "Root Task",
-			Status:  models.StatusTodo,
+			Status:  models.StatusCaptured,
 			Created: now,
 			Updated: now,
 		}

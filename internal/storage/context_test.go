@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/simonspoon/limbo/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,7 +31,7 @@ func TestWriteAndReadContext_RoundTrip(t *testing.T) {
 	store := setupContextTest(t)
 
 	input := map[string]string{
-		"Action":      "Implement JWT login and token refresh endpoints.",
+		"Approach":    "Implement JWT login and token refresh endpoints.",
 		"Verify":      "1. go test ./internal/auth/... passes\n2. curl POST /login returns 200",
 		"Result":      "List endpoints added and test results",
 		"Description": "Add JWT-based login and token refresh",
@@ -52,7 +53,7 @@ func TestWriteContext_SectionOrdering(t *testing.T) {
 		"Notes":       "### 2026-02-20T10:00:00Z\nStarted",
 		"Description": "Some desc",
 		"Verify":      "Run tests",
-		"Action":      "Do the thing",
+		"Approach":    "Do the thing",
 		"Zebra":       "Custom section Z",
 		"Result":      "Report back",
 		"Alpha":       "Custom section A",
@@ -68,7 +69,7 @@ func TestWriteContext_SectionOrdering(t *testing.T) {
 	content := string(data)
 
 	// Find positions of each section header
-	actionPos := indexOf(content, "## Action")
+	actionPos := indexOf(content, "## Approach")
 	verifyPos := indexOf(content, "## Verify")
 	resultPos := indexOf(content, "## Result")
 	outcomePos := indexOf(content, "## Outcome")
@@ -90,7 +91,7 @@ func TestWriteContext_EmptySectionsOmitted(t *testing.T) {
 	store := setupContextTest(t)
 
 	sections := map[string]string{
-		"Action":      "Do something",
+		"Approach":    "Do something",
 		"Verify":      "",
 		"Result":      "   ",
 		"Description": "A real description",
@@ -103,7 +104,7 @@ func TestWriteContext_EmptySectionsOmitted(t *testing.T) {
 	require.NoError(t, err)
 	content := string(data)
 
-	assert.Contains(t, content, "## Action")
+	assert.Contains(t, content, "## Approach")
 	assert.Contains(t, content, "## Description")
 	assert.NotContains(t, content, "## Verify")
 	assert.NotContains(t, content, "## Result")
@@ -131,8 +132,8 @@ func TestAppendNote_ExistingFileNoNotes(t *testing.T) {
 
 	// Write initial content without Notes
 	sections := map[string]string{
-		"Action": "Do the thing",
-		"Verify": "Check it",
+		"Approach": "Do the thing",
+		"Verify":   "Check it",
 	}
 	err := store.WriteContext("abcd", sections)
 	require.NoError(t, err)
@@ -146,7 +147,7 @@ func TestAppendNote_ExistingFileNoNotes(t *testing.T) {
 	got, err := store.ReadContext("abcd")
 	require.NoError(t, err)
 
-	assert.Equal(t, "Do the thing", got["Action"])
+	assert.Equal(t, "Do the thing", got["Approach"])
 	assert.Equal(t, "Check it", got["Verify"])
 	assert.Contains(t, got["Notes"], "### 2026-02-20T11:00:00Z")
 	assert.Contains(t, got["Notes"], "Progress update")
@@ -216,7 +217,7 @@ func TestDeleteContext_RemovesDirectory(t *testing.T) {
 
 	// Write some content first
 	sections := map[string]string{
-		"Action": "Do the thing",
+		"Approach": "Do the thing",
 	}
 	err := store.WriteContext("abcd", sections)
 	require.NoError(t, err)
@@ -265,14 +266,14 @@ func TestWriteAndReadContext_SectionWithNoContent(t *testing.T) {
 	store := setupContextTest(t)
 
 	// Manually write a file with a section that has only a heading
-	content := "## Action\n\n## Verify\nRun tests\n"
+	content := "## Approach\n\n## Verify\nRun tests\n"
 	dir := store.ContextDir("abcd")
 	require.NoError(t, os.MkdirAll(dir, 0755))
 	require.NoError(t, os.WriteFile(store.contextFilePath("abcd"), []byte(content), 0644))
 
 	got, err := store.ReadContext("abcd")
 	require.NoError(t, err)
-	assert.Equal(t, "", got["Action"])
+	assert.Equal(t, "", got["Approach"])
 	assert.Equal(t, "Run tests", got["Verify"])
 }
 
@@ -280,8 +281,8 @@ func TestWriteAndReadContext_MultiLineContent(t *testing.T) {
 	store := setupContextTest(t)
 
 	sections := map[string]string{
-		"Action": "Step 1: Do X\nStep 2: Do Y\n\nStep 3: Do Z",
-		"Verify": "- check A\n- check B\n- check C",
+		"Approach": "Step 1: Do X\nStep 2: Do Y\n\nStep 3: Do Z",
+		"Verify":   "- check A\n- check B\n- check C",
 	}
 
 	err := store.WriteContext("abcd", sections)
@@ -296,7 +297,7 @@ func TestWriteAndReadContext_CodeBlocksPreserved(t *testing.T) {
 	store := setupContextTest(t)
 
 	sections := map[string]string{
-		"Action": "Run this:\n```markdown\n## Not a section\nSome content\n```\nThen check output",
+		"Approach": "Run this:\n```markdown\n## Not a section\nSome content\n```\nThen check output",
 	}
 
 	err := store.WriteContext("abcd", sections)
@@ -304,7 +305,7 @@ func TestWriteAndReadContext_CodeBlocksPreserved(t *testing.T) {
 
 	got, err := store.ReadContext("abcd")
 	require.NoError(t, err)
-	assert.Equal(t, sections["Action"], got["Action"])
+	assert.Equal(t, sections["Approach"], got["Approach"])
 	// Verify we didn't split on ## inside code block
 	_, hasNotASection := got["Not a section"]
 	assert.False(t, hasNotASection)
@@ -325,6 +326,95 @@ Short note`
 
 	assert.Equal(t, "First line of note.\nSecond line of note.\n\nThird paragraph.", notes[0].Content)
 	assert.Equal(t, "Short note", notes[1].Content)
+}
+
+func TestWriteAndReadContext_NewFields(t *testing.T) {
+	store := setupContextTest(t)
+
+	input := map[string]string{
+		"Approach":           "Design the API endpoints",
+		"Verify":             "Run integration tests",
+		"Result":             "All tests pass",
+		"AcceptanceCriteria": "Endpoints return correct status codes",
+		"ScopeOut":           "No frontend changes",
+		"AffectedAreas":      "internal/api, internal/handlers",
+		"TestStrategy":       "Unit + integration tests",
+		"Risks":              "Breaking change to existing clients",
+		"Report":             "Summary of changes and test results",
+	}
+
+	err := store.WriteContext("abcd", input)
+	require.NoError(t, err)
+
+	got, err := store.ReadContext("abcd")
+	require.NoError(t, err)
+	assert.Equal(t, input, got)
+}
+
+func TestWriteContext_NewFieldOrdering(t *testing.T) {
+	store := setupContextTest(t)
+
+	sections := map[string]string{
+		"Report":             "Final report",
+		"Risks":              "Some risks",
+		"TestStrategy":       "Test plan",
+		"AffectedAreas":      "Some areas",
+		"ScopeOut":           "Not in scope",
+		"AcceptanceCriteria": "Must pass",
+		"Description":        "A description",
+		"Approach":           "The approach",
+		"Verify":             "Run tests",
+		"Result":             "Report results",
+		"Outcome":            "Shipped",
+	}
+
+	err := store.WriteContext("abcd", sections)
+	require.NoError(t, err)
+
+	data, err := os.ReadFile(store.contextFilePath("abcd"))
+	require.NoError(t, err)
+	content := string(data)
+
+	approachPos := indexOf(content, "## Approach")
+	verifyPos := indexOf(content, "## Verify")
+	resultPos := indexOf(content, "## Result")
+	outcomePos := indexOf(content, "## Outcome")
+	acPos := indexOf(content, "## AcceptanceCriteria")
+	scopePos := indexOf(content, "## ScopeOut")
+	areasPos := indexOf(content, "## AffectedAreas")
+	testPos := indexOf(content, "## TestStrategy")
+	risksPos := indexOf(content, "## Risks")
+	reportPos := indexOf(content, "## Report")
+	descPos := indexOf(content, "## Description")
+
+	assert.True(t, approachPos < verifyPos, "Approach before Verify")
+	assert.True(t, verifyPos < resultPos, "Verify before Result")
+	assert.True(t, resultPos < outcomePos, "Result before Outcome")
+	assert.True(t, outcomePos < acPos, "Outcome before AcceptanceCriteria")
+	assert.True(t, acPos < scopePos, "AcceptanceCriteria before ScopeOut")
+	assert.True(t, scopePos < areasPos, "ScopeOut before AffectedAreas")
+	assert.True(t, areasPos < testPos, "AffectedAreas before TestStrategy")
+	assert.True(t, testPos < risksPos, "TestStrategy before Risks")
+	assert.True(t, risksPos < reportPos, "Risks before Report")
+	assert.True(t, reportPos < descPos, "Report before Description")
+}
+
+func TestMergeContext_ActionFallback(t *testing.T) {
+	store := setupContextTest(t)
+
+	// Write a context file with "Action" section (simulating stale v5 data)
+	dir := store.ContextDir("abcd")
+	require.NoError(t, os.MkdirAll(dir, 0755))
+	content := "## Action\nDo the old thing\n\n## Verify\nCheck it\n"
+	require.NoError(t, os.WriteFile(store.contextFilePath("abcd"), []byte(content), 0644))
+
+	// mergeContext should map Action → Approach
+	task := &models.Task{ID: "abcd"}
+	err := store.mergeContext(task)
+	require.NoError(t, err)
+
+	assert.Equal(t, "Do the old thing", task.Approach)
+	assert.Equal(t, "Check it", task.Verify)
 }
 
 // indexOf returns the byte position of substr in s, or -1 if not found.

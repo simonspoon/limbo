@@ -21,7 +21,7 @@ func TestClaimCommand(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -50,7 +50,7 @@ func TestClaimCommand_AlreadyOwned(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Owner:   &owner,
 		Created: now,
 		Updated: now,
@@ -76,7 +76,7 @@ func TestClaimCommand_ForceOverride(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Owner:   &owner,
 		Created: now,
 		Updated: now,
@@ -106,7 +106,7 @@ func TestClaimCommand_SameOwner(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Owner:   &owner,
 		Created: now,
 		Updated: now,
@@ -143,7 +143,7 @@ func TestUnclaimCommand(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Owner:   &owner,
 		Created: now,
 		Updated: now,
@@ -170,7 +170,7 @@ func TestUnclaimCommand_NoOwner(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -196,7 +196,7 @@ func TestListCommand_OwnerFilter(t *testing.T) {
 	task1 := &models.Task{
 		ID:      "aaaa",
 		Name:    "Task 1",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Owner:   &owner1,
 		Created: now,
 		Updated: now,
@@ -206,7 +206,7 @@ func TestListCommand_OwnerFilter(t *testing.T) {
 	task2 := &models.Task{
 		ID:      "aaab",
 		Name:    "Task 2",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Owner:   &owner2,
 		Created: now,
 		Updated: now,
@@ -216,7 +216,7 @@ func TestListCommand_OwnerFilter(t *testing.T) {
 	task3 := &models.Task{
 		ID:      "aaac",
 		Name:    "Task 3",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -247,7 +247,7 @@ func TestListCommand_UnclaimedFilter(t *testing.T) {
 	task1 := &models.Task{
 		ID:      "aaaa",
 		Name:    "Owned Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Owner:   &owner,
 		Created: now,
 		Updated: now,
@@ -257,7 +257,7 @@ func TestListCommand_UnclaimedFilter(t *testing.T) {
 	task2 := &models.Task{
 		ID:      "aaab",
 		Name:    "Unclaimed Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -288,7 +288,7 @@ func TestNextCommand_UnclaimedFlag(t *testing.T) {
 	task1 := &models.Task{
 		ID:      "aaaa",
 		Name:    "Owned Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Owner:   &owner,
 		Created: now,
 		Updated: now,
@@ -299,7 +299,7 @@ func TestNextCommand_UnclaimedFlag(t *testing.T) {
 	task2 := &models.Task{
 		ID:      "aaab",
 		Name:    "Unclaimed Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now.Add(time.Millisecond),
 		Updated: now.Add(time.Millisecond),
 	}

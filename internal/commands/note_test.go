@@ -21,7 +21,7 @@ func TestNoteCommand(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -49,7 +49,7 @@ func TestNoteCommand_MultipleNotes(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -105,7 +105,7 @@ func TestNoteCommand_EmptyMessage(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -128,7 +128,7 @@ func TestNoteCommand_Pretty(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}

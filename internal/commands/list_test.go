@@ -35,7 +35,7 @@ func TestListCommand(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create tasks with different statuses
-	createTestTask(t, store, "Todo Task", models.StatusTodo, nil)
+	createTestTask(t, store, "Todo Task", models.StatusCaptured, nil)
 	createTestTask(t, store, "In Progress Task", models.StatusInProgress, nil)
 	createTestTask(t, store, "Done Task", models.StatusDone, nil)
 
@@ -56,12 +56,12 @@ func TestListFilterByStatus(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create tasks with different statuses
-	createTestTask(t, store, "Todo Task", models.StatusTodo, nil)
+	createTestTask(t, store, "Todo Task", models.StatusCaptured, nil)
 	createTestTask(t, store, "In Progress Task", models.StatusInProgress, nil)
 	createTestTask(t, store, "Done Task", models.StatusDone, nil)
 
 	// Test filter by status
-	listStatus = models.StatusTodo
+	listStatus = models.StatusCaptured
 	listPretty = false
 
 	tasks, err := store.LoadAll()
@@ -70,7 +70,7 @@ func TestListFilterByStatus(t *testing.T) {
 	// Count todo tasks
 	var todoCount int
 	for _, t := range tasks {
-		if t.Status == models.StatusTodo {
+		if t.Status == models.StatusCaptured {
 			todoCount++
 		}
 	}
@@ -111,12 +111,12 @@ func TestListWithStatusFilter(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create tasks with different statuses
-	createTestTask(t, store, "Todo Task 1", models.StatusTodo, nil)
-	createTestTask(t, store, "Todo Task 2", models.StatusTodo, nil)
+	createTestTask(t, store, "Todo Task 1", models.StatusCaptured, nil)
+	createTestTask(t, store, "Todo Task 2", models.StatusCaptured, nil)
 	createTestTask(t, store, "Done Task", models.StatusDone, nil)
 
 	// Test filter by todo status - actually run the command
-	listStatus = models.StatusTodo
+	listStatus = models.StatusCaptured
 	listPretty = false
 
 	err = runList(nil, []string{})
@@ -131,7 +131,7 @@ func TestListPrettyOutput(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create tasks
-	createTestTask(t, store, "Test Task", models.StatusTodo, nil)
+	createTestTask(t, store, "Test Task", models.StatusCaptured, nil)
 
 	listStatus = ""
 	listPretty = true

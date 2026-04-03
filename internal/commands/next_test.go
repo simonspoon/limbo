@@ -31,7 +31,7 @@ func TestNextCommand_SingleTask(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Only Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -55,7 +55,7 @@ func TestNextCommand_ReturnsFIFO(t *testing.T) {
 	task1 := &models.Task{
 		ID:      "aaaa",
 		Name:    "Older Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: older,
 		Updated: older,
 	}
@@ -66,7 +66,7 @@ func TestNextCommand_ReturnsFIFO(t *testing.T) {
 	task2 := &models.Task{
 		ID:      "aaab",
 		Name:    "Newer Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: newer,
 		Updated: newer,
 	}
@@ -113,7 +113,7 @@ func TestNextCommand_SkipsNonTodoTasks(t *testing.T) {
 	todoTask := &models.Task{
 		ID:      "aaac",
 		Name:    "Todo Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now.Add(2 * time.Millisecond),
 		Updated: now.Add(2 * time.Millisecond),
 	}
@@ -151,7 +151,7 @@ func TestNextCommand_ReportsBlockedCount(t *testing.T) {
 		task := &models.Task{
 			ID:        id,
 			Name:      "Blocked Task",
-			Status:    models.StatusTodo,
+			Status:    models.StatusCaptured,
 			BlockedBy: []string{"aaaa"},
 			Created:   now.Add(time.Duration(i+1) * time.Millisecond),
 			Updated:   now.Add(time.Duration(i+1) * time.Millisecond),
@@ -185,10 +185,10 @@ func TestNextCommand_PrettyStructuredFields(t *testing.T) {
 		ID:          "aaaa",
 		Name:        "Structured Task",
 		Description: "A description",
-		Action:      "run migrations",
+		Approach:    "run migrations",
 		Verify:      "check table exists",
 		Result:      "migration output",
-		Status:      models.StatusTodo,
+		Status:      models.StatusCaptured,
 		Created:     now,
 		Updated:     now,
 	}
@@ -214,7 +214,7 @@ func TestNextCommand_Pretty(t *testing.T) {
 		ID:          "aaaa",
 		Name:        "Test Task",
 		Description: "A description",
-		Status:      models.StatusTodo,
+		Status:      models.StatusCaptured,
 		Created:     now,
 		Updated:     now,
 	}

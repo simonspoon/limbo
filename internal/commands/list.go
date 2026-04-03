@@ -173,14 +173,14 @@ func printTasksPretty(tasks []models.Task) {
 
 	// Status order
 	statuses := []string{
-		models.StatusTodo,
+		models.StatusCaptured,
 		models.StatusInProgress,
 		models.StatusDone,
 	}
 
 	// Colors
 	statusColors := map[string]*color.Color{
-		models.StatusTodo:       color.New(color.FgWhite),
+		models.StatusCaptured:   color.New(color.FgWhite),
 		models.StatusInProgress: color.New(color.FgYellow),
 		models.StatusDone:       color.New(color.FgGreen),
 	}

@@ -92,7 +92,7 @@ func TestTemplateApplyCommand_WithParent(t *testing.T) {
 	addDescription = ""
 	addParent = ""
 	addPretty = false
-	addAction = "do something"
+	addApproach = "do something"
 	addVerify = "check something"
 	addResult = "report something"
 

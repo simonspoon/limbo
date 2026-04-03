@@ -22,7 +22,7 @@ func TestStatusCommand(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -55,7 +55,7 @@ func TestStatusCommand_InvalidStatus(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -110,7 +110,7 @@ func TestStatusCommand_AllStatuses(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -121,7 +121,7 @@ func TestStatusCommand_AllStatuses(t *testing.T) {
 	statusOutcome = ""
 
 	// Test each valid status
-	statuses := []string{models.StatusTodo, models.StatusInProgress, models.StatusDone}
+	statuses := []string{models.StatusCaptured, models.StatusInProgress, models.StatusDone}
 	for _, status := range statuses {
 		err = runStatus(nil, []string{task.ID, status})
 		require.NoError(t, err)
@@ -146,7 +146,7 @@ func TestStatusCommand_CannotMarkDoneWithUndoneChildren(t *testing.T) {
 	parent := &models.Task{
 		ID:      parentID,
 		Name:    "Parent Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -156,7 +156,7 @@ func TestStatusCommand_CannotMarkDoneWithUndoneChildren(t *testing.T) {
 	child := &models.Task{
 		ID:      "aaab",
 		Name:    "Child Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Parent:  &parentID,
 		Created: now,
 		Updated: now,
@@ -194,7 +194,7 @@ func TestStatusCommand_CannotStartBlockedTask(t *testing.T) {
 	blocker := &models.Task{
 		ID:      "aaaa",
 		Name:    "Blocker Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -204,7 +204,7 @@ func TestStatusCommand_CannotStartBlockedTask(t *testing.T) {
 	blocked := &models.Task{
 		ID:        "aaab",
 		Name:      "Blocked Task",
-		Status:    models.StatusTodo,
+		Status:    models.StatusCaptured,
 		BlockedBy: []string{"aaaa"},
 		Created:   now,
 		Updated:   now,
@@ -225,7 +225,7 @@ func TestStatusCommand_CannotStartBlockedTask(t *testing.T) {
 	// Verify task is still todo
 	updated, err := store.LoadTask(blocked.ID)
 	require.NoError(t, err)
-	assert.Equal(t, models.StatusTodo, updated.Status)
+	assert.Equal(t, models.StatusCaptured, updated.Status)
 }
 
 func TestStatusCommand_CanStartAfterUnblock(t *testing.T) {
@@ -241,7 +241,7 @@ func TestStatusCommand_CanStartAfterUnblock(t *testing.T) {
 	blocker := &models.Task{
 		ID:      "aaaa",
 		Name:    "Blocker Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -251,7 +251,7 @@ func TestStatusCommand_CanStartAfterUnblock(t *testing.T) {
 	blocked := &models.Task{
 		ID:        "aaab",
 		Name:      "Blocked Task",
-		Status:    models.StatusTodo,
+		Status:    models.StatusCaptured,
 		BlockedBy: []string{"aaaa"},
 		Created:   now,
 		Updated:   now,
@@ -287,7 +287,7 @@ func TestStatusCommand_PrettyOutput(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Test Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
@@ -310,14 +310,14 @@ func TestStatusCommand_RequiresOutcomeForStructuredTask(t *testing.T) {
 
 	now := time.Now()
 	task := &models.Task{
-		ID:      "aaaa",
-		Name:    "Structured Task",
-		Status:  models.StatusTodo,
-		Action:  "do X",
-		Verify:  "check Y",
-		Result:  "report Z",
-		Created: now,
-		Updated: now,
+		ID:       "aaaa",
+		Name:     "Structured Task",
+		Status:   models.StatusCaptured,
+		Approach: "do X",
+		Verify:   "check Y",
+		Result:   "report Z",
+		Created:  now,
+		Updated:  now,
 	}
 	require.NoError(t, store.SaveTask(task))
 
@@ -339,14 +339,14 @@ func TestStatusCommand_AcceptsOutcomeForStructuredTask(t *testing.T) {
 
 	now := time.Now()
 	task := &models.Task{
-		ID:      "aaaa",
-		Name:    "Structured Task",
-		Status:  models.StatusTodo,
-		Action:  "do X",
-		Verify:  "check Y",
-		Result:  "report Z",
-		Created: now,
-		Updated: now,
+		ID:       "aaaa",
+		Name:     "Structured Task",
+		Status:   models.StatusCaptured,
+		Approach: "do X",
+		Verify:   "check Y",
+		Result:   "report Z",
+		Created:  now,
+		Updated:  now,
 	}
 	require.NoError(t, store.SaveTask(task))
 
@@ -373,7 +373,7 @@ func TestStatusCommand_LegacyTaskDoneWithoutOutcome(t *testing.T) {
 	task := &models.Task{
 		ID:      "aaaa",
 		Name:    "Legacy Task",
-		Status:  models.StatusTodo,
+		Status:  models.StatusCaptured,
 		Created: now,
 		Updated: now,
 	}
