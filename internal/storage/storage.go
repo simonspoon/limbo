@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/simonspoon/limbo/internal/models"
@@ -86,16 +87,37 @@ func (s *Storage) Init() error {
 		return fmt.Errorf("failed to create .limbo directory: %w", err)
 	}
 
+	// Create context directory for per-task content files
+	contextPath := filepath.Join(limboPath, ContextDirName)
+	if err := os.Mkdir(contextPath, 0755); err != nil {
+		return fmt.Errorf("failed to create context directory: %w", err)
+	}
+
 	// Create empty task store
 	store := &TaskStore{
-		Version: "4.0.0",
+		Version: "5.0.0",
 		Tasks:   []models.Task{},
 	}
 	return s.saveStore(store)
 }
 
-// LoadAll loads all tasks from the store
+// LoadAll loads all tasks from the store, merging content from context files.
 func (s *Storage) LoadAll() ([]models.Task, error) {
+	store, err := s.loadStore()
+	if err != nil {
+		return nil, err
+	}
+	for i := range store.Tasks {
+		if err := s.mergeContext(&store.Tasks[i]); err != nil {
+			return nil, err
+		}
+	}
+	return store.Tasks, nil
+}
+
+// LoadAllIndex loads all tasks from the JSON index without loading context files.
+// Use this when you only need metadata (status, parent, blockedBy, owner, timestamps).
+func (s *Storage) LoadAllIndex() ([]models.Task, error) {
 	store, err := s.loadStore()
 	if err != nil {
 		return nil, err
@@ -103,7 +125,7 @@ func (s *Storage) LoadAll() ([]models.Task, error) {
 	return store.Tasks, nil
 }
 
-// LoadTask loads a task by ID
+// LoadTask loads a task by ID, merging content from its context file.
 func (s *Storage) LoadTask(id string) (*models.Task, error) {
 	store, err := s.loadStore()
 	if err != nil {
@@ -112,31 +134,56 @@ func (s *Storage) LoadTask(id string) (*models.Task, error) {
 
 	for i := range store.Tasks {
 		if store.Tasks[i].ID == id {
-			return &store.Tasks[i], nil
+			task := &store.Tasks[i]
+			if err := s.mergeContext(task); err != nil {
+				return nil, err
+			}
+			return task, nil
 		}
 	}
 	return nil, ErrTaskNotFound
 }
 
-// SaveTask saves a task (creates or updates)
+// SaveTask saves a task (creates or updates), splitting content into a context file.
 func (s *Storage) SaveTask(task *models.Task) error {
 	store, err := s.loadStore()
 	if err != nil {
 		return err
 	}
 
+	// Write content fields to context file, or delete context if all are empty
+	sections := extractContext(task)
+	if len(sections) > 0 {
+		if err := s.WriteContext(task.ID, sections); err != nil {
+			return err
+		}
+	} else {
+		if err := s.DeleteContext(task.ID); err != nil {
+			return err
+		}
+	}
+
+	// Copy task and strip content fields for the JSON index
+	indexTask := *task
+	indexTask.Description = ""
+	indexTask.Action = ""
+	indexTask.Verify = ""
+	indexTask.Result = ""
+	indexTask.Outcome = ""
+	indexTask.Notes = nil
+
 	// Check if task exists (update) or is new (create)
 	found := false
 	for i := range store.Tasks {
 		if store.Tasks[i].ID == task.ID {
-			store.Tasks[i] = *task
+			store.Tasks[i] = indexTask
 			found = true
 			break
 		}
 	}
 
 	if !found {
-		store.Tasks = append(store.Tasks, *task)
+		store.Tasks = append(store.Tasks, indexTask)
 	}
 
 	return s.saveStore(store)
@@ -481,7 +528,7 @@ func (s *Storage) loadStore() (*TaskStore, error) {
 	data, err := os.ReadFile(storePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return &TaskStore{Version: "4.0.0", Tasks: []models.Task{}}, nil
+			return &TaskStore{Version: "5.0.0", Tasks: []models.Task{}}, nil
 		}
 		return nil, fmt.Errorf("failed to read tasks file: %w", err)
 	}
@@ -504,6 +551,10 @@ func (s *Storage) loadStore() (*TaskStore, error) {
 		return s.migrateFromV3(data)
 	}
 
+	// v4.0.0 and v5.0.0 share the same JSON structure.
+	// v4.0.0 stores have content fields inline in the JSON; migration to v5.0.0
+	// (splitting content into context files) is handled by a separate migration task.
+	// v5.0.0 stores have content fields stripped from the JSON (stored in context files).
 	var store TaskStore
 	if err := json.Unmarshal(data, &store); err != nil {
 		return nil, fmt.Errorf("failed to parse tasks file: %w", err)
@@ -638,7 +689,7 @@ func (s *Storage) loadArchive() (*TaskStore, error) {
 	data, err := os.ReadFile(archivePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return &TaskStore{Version: "4.0.0", Tasks: []models.Task{}}, nil
+			return &TaskStore{Version: "5.0.0", Tasks: []models.Task{}}, nil
 		}
 		return nil, fmt.Errorf("failed to read archive file: %w", err)
 	}
@@ -734,7 +785,7 @@ func (s *Storage) UnarchiveTask(id string) (*models.Task, error) {
 
 // PurgeArchive permanently deletes all archived tasks
 func (s *Storage) PurgeArchive() error {
-	archive := &TaskStore{Version: "4.0.0", Tasks: []models.Task{}}
+	archive := &TaskStore{Version: "5.0.0", Tasks: []models.Task{}}
 	return s.saveArchive(archive)
 }
 
@@ -825,6 +876,61 @@ func (s *Storage) RemoveFromAllBlockedBy(taskID string) error {
 		return s.saveStore(store)
 	}
 	return nil
+}
+
+// mergeContext reads a task's context file and populates content fields.
+func (s *Storage) mergeContext(task *models.Task) error {
+	sections, err := s.ReadContext(task.ID)
+	if err != nil {
+		return err
+	}
+	if len(sections) == 0 {
+		return nil
+	}
+	task.Description = sections["Description"]
+	task.Action = sections["Action"]
+	task.Verify = sections["Verify"]
+	task.Result = sections["Result"]
+	task.Outcome = sections["Outcome"]
+	if notesStr, ok := sections["Notes"]; ok && notesStr != "" {
+		task.Notes = ParseNotes(notesStr)
+	}
+	return nil
+}
+
+// extractContext builds a section map from a task's content fields.
+func extractContext(task *models.Task) map[string]string {
+	sections := make(map[string]string)
+	if task.Action != "" {
+		sections["Action"] = task.Action
+	}
+	if task.Verify != "" {
+		sections["Verify"] = task.Verify
+	}
+	if task.Result != "" {
+		sections["Result"] = task.Result
+	}
+	if task.Outcome != "" {
+		sections["Outcome"] = task.Outcome
+	}
+	if task.Description != "" {
+		sections["Description"] = task.Description
+	}
+	if len(task.Notes) > 0 {
+		var b strings.Builder
+		for i, note := range task.Notes {
+			if i > 0 {
+				b.WriteString("\n")
+			}
+			b.WriteString("### ")
+			b.WriteString(note.Timestamp.Format(time.RFC3339))
+			b.WriteString("\n")
+			b.WriteString(note.Content)
+			b.WriteString("\n")
+		}
+		sections["Notes"] = strings.TrimSpace(b.String())
+	}
+	return sections
 }
 
 // GenerateTaskID generates a unique 4-character alphabetic ID
