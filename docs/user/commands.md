@@ -48,7 +48,7 @@ limbo init [flags]
 
 ### `limbo add <name>`
 
-Add a new task with the given name. New tasks start with status `todo`.
+Add a new task with the given name. New tasks start with status `captured`.
 
 **Usage**
 
@@ -60,9 +60,16 @@ limbo add <name> [flags]
 
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
-| `--action` | | `""` | What concrete work to perform |
-| `--verify` | | `""` | How to confirm the action succeeded |
+| `--approach` | | `""` | Chosen solution path — what to do and why |
+| `--action` | | `""` | Hidden alias for `--approach` (backward compat) |
+| `--verify` | | `""` | How to confirm the work succeeded |
 | `--result` | | `""` | Template for what to report back |
+| `--acceptance-criteria` | | `""` | Observable conditions that define "done" |
+| `--scope-out` | | `""` | What is explicitly out of scope |
+| `--affected-areas` | | `""` | Areas of the codebase affected |
+| `--test-strategy` | | `""` | How to test the changes |
+| `--risks` | | `""` | Known risks and mitigations |
+| `--report` | | `""` | Completion report |
 | `--description` | `-d` | `""` | Task description |
 | `--parent` | | `""` | Parent task ID |
 | `--pretty` | | `false` | Human-readable output |
@@ -98,9 +105,16 @@ limbo edit <id> [flags]
 |------|-------|---------|-------------|
 | `--name` | | `""` | Task name |
 | `--description` | `-d` | `""` | Task description |
-| `--action` | | `""` | What concrete work to perform |
-| `--verify` | | `""` | How to confirm the action succeeded |
+| `--approach` | | `""` | Chosen solution path |
+| `--action` | | `""` | Hidden alias for `--approach` (backward compat) |
+| `--verify` | | `""` | How to confirm the work succeeded |
 | `--result` | | `""` | Template for what to report back |
+| `--acceptance-criteria` | | `""` | Observable conditions that define "done" |
+| `--scope-out` | | `""` | What is explicitly out of scope |
+| `--affected-areas` | | `""` | Areas of the codebase affected |
+| `--test-strategy` | | `""` | How to test the changes |
+| `--risks` | | `""` | Known risks and mitigations |
+| `--report` | | `""` | Completion report |
 | `--pretty` | | `false` | Human-readable output showing the updated task |
 
 **Output (JSON)**
@@ -114,7 +128,7 @@ limbo edit <id> [flags]
 - At least one editable flag must be specified (error if no flags provided).
 - Task must exist.
 - Fields not specified in flags are left unchanged.
-- Non-editable fields (status, parent, blockedBy, owner, notes, created) are preserved. Use dedicated commands (`status`, `parent`/`unparent`, `block`/`unblock`, `claim`/`unclaim`, `note`) for those.
+- Non-editable fields (status, parent, blockedBy, owner, notes, history, created) are preserved. Use dedicated commands (`status`, `parent`/`unparent`, `block`/`unblock`, `claim`/`unclaim`, `note`) for those.
 
 ---
 
@@ -128,13 +142,15 @@ Update the status of a task.
 limbo status <id> <status> [flags]
 ```
 
-Valid values for `<status>`: `todo`, `in-progress`, `done`.
+Valid values for `<status>`: `captured`, `refined`, `planned`, `ready`, `in-progress`, `in-review`, `done`.
 
 **Flags**
 
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--outcome` | `""` | Actual result to record when marking done |
+| `--reason` | `""` | Required for backward transitions (e.g., refined → captured) |
+| `--by` | `""` | Who triggered the transition (recorded in history) |
 | `--pretty` | `false` | Human-readable output |
 
 **Output (JSON)**
@@ -143,12 +159,30 @@ Valid values for `<status>`: `todo`, `in-progress`, `done`.
 {"id": "abcd", "status": "done"}
 ```
 
+**Gate validation**
+
+Forward transitions enforce required fields at each step:
+
+| Transition | Required fields |
+|-----------|----------------|
+| captured → refined | `acceptance_criteria`, `scope_out` |
+| refined → planned | `approach`, `affected_areas`, `test_strategy`, `risks` |
+| planned → ready | `verify` |
+| ready → in-progress | task must be claimed (has owner) |
+| in-progress → in-review | `report` |
+| in-review → done | `outcome` |
+
+Multi-stage jumps (e.g., captured → planned) validate all intermediate gates. If any gate fails, the transition is rejected with a message listing the missing fields.
+
 **Constraints and errors**
 
-- Cannot set a task to `in-progress` if it has incomplete blockers (tasks in its `blockedBy` list that are not `done`).
-- Cannot set a task to `done` if it has children that are not `done`.
-- When a task is marked `done`, it is automatically removed from the `blockedBy` list of all other tasks.
-- Structured tasks (those with `action`, `verify`, and `result` all set) require `--outcome` when marking `done`.
+- Forward transitions are the default. Backward transitions require `--reason`.
+- Manually blocked tasks cannot transition until unblocked.
+- Cannot transition to `in-progress` if dependency-blocked (`blockedBy` contains incomplete tasks).
+- Cannot mark `done` if the task has undone children.
+- When marked `done`, the task is auto-removed from all other tasks' `blockedBy` lists.
+- Structured tasks (those with `approach`, `verify`, and `result` all set) require `--outcome` when marking `done`.
+- Every transition records a `HistoryEntry` (from, to, by, at, reason).
 
 ---
 
@@ -312,7 +346,7 @@ limbo list [flags]
 
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
-| `--status` | `-s` | `""` | Filter by status: `todo`, `in-progress`, or `done` |
+| `--status` | `-s` | `""` | Filter by status: `captured`, `refined`, `planned`, `ready`, `in-progress`, `in-review`, or `done` |
 | `--owner` | | `""` | Show only tasks owned by this agent name |
 | `--unclaimed` | | `false` | Show only tasks with no owner |
 | `--blocked` | | `false` | Show only blocked tasks |
@@ -354,7 +388,7 @@ limbo tree [flags]
 
 **Output**
 
-Pretty mode (default): renders an indented tree with status labels (`[TODO]`, `[IN-PROG]`, `[DONE]`), using colors. JSON mode: returns a flat array of task objects.
+Pretty mode (default): renders an indented tree with status labels (`[CAPTURED]`, `[REFINED]`, `[PLANNED]`, `[READY]`, `[IN-PROG]`, `[REVIEW]`, `[DONE]`), using colors. JSON mode: returns a flat array of task objects.
 
 **Visibility**
 
@@ -385,12 +419,19 @@ limbo show <id> [flags]
   "id": "abcd",
   "name": "My task",
   "description": "...",
-  "action": "...",
+  "approach": "...",
   "verify": "...",
   "result": "...",
   "outcome": "...",
+  "acceptanceCriteria": "...",
+  "scopeOut": "...",
+  "affectedAreas": "...",
+  "testStrategy": "...",
+  "risks": "...",
+  "report": "...",
   "parent": null,
-  "status": "todo",
+  "status": "captured",
+  "history": [...],
   "blockedBy": ["efgh"],
   "owner": null,
   "notes": [...],
@@ -443,69 +484,80 @@ The output shape varies depending on context:
 
 **Traversal behavior**
 
-When in-progress tasks exist, `next` finds the deepest in-progress task in the hierarchy, then returns its `todo` children. If there are no `todo` children, it returns `todo` siblings. It walks up the hierarchy as needed. Blocked tasks are always skipped. With `--unclaimed`, tasks that have an owner are also skipped.
+When in-progress tasks exist, `next` finds the deepest in-progress task in the hierarchy, then returns its `ready` children. If there are no `ready` children, it returns `ready` siblings. It walks up the hierarchy as needed. Blocked tasks are always skipped. With `--unclaimed`, tasks that have an owner are also skipped.
+
+Note: `next` only surfaces tasks in the `ready` stage — tasks must pass through the planning stages (captured → refined → planned → ready) before they appear in `next` results.
 
 ---
 
 ## Dependencies
 
-### `limbo block <blocker-id> <blocked-id>`
+### `limbo block`
+
+Two modes: **dependency block** (2 args) and **manual block** (1 arg).
+
+**Dependency block: `limbo block <blocker-id> <blocked-id>`**
 
 Add a dependency: `<blocked-id>` will wait for `<blocker-id>` to be `done` before it can be started.
-
-**Usage**
 
 ```
 limbo block <blocker-id> <blocked-id> [flags]
 ```
 
+**Manual block: `limbo block <id> --reason "..."`**
+
+Manually block a task. The task's current stage is saved and all status transitions are rejected until unblocked. Records a HistoryEntry.
+
+```
+limbo block <id> --reason "waiting on design review" [flags]
+```
+
 **Flags**
 
 | Flag | Default | Description |
 |------|---------|-------------|
+| `--reason` | `""` | Reason for manual block (required for 1-arg mode) |
+| `--by` | `""` | Who blocked the task |
 | `--pretty` | `false` | Human-readable output |
-
-**Output (JSON)**
-
-```json
-{"id": "abcd", "blockedBy": ["efgh"]}
-```
 
 **Constraints and errors**
 
-- Both tasks must exist.
-- A task cannot block itself.
-- Cannot block on a task that is already `done`.
-- The dependency already exists (duplicate).
-- Circular dependencies are rejected (e.g., A blocks B, B blocks A).
+- Dependency block: both tasks must exist, no self-block, no blocking on done tasks, no duplicates, no cycles.
+- Manual block: task must exist, `--reason` required, cannot block an already manually blocked task.
 
 ---
 
-### `limbo unblock <blocker-id> <blocked-id>`
+### `limbo unblock`
 
-Remove a dependency: remove `<blocker-id>` from `<blocked-id>`'s `blockedBy` list.
+Two modes: **remove dependency** (2 args) and **remove manual block** (1 arg).
 
-**Usage**
+**Remove dependency: `limbo unblock <blocker-id> <blocked-id>`**
+
+Remove `<blocker-id>` from `<blocked-id>`'s `blockedBy` list.
 
 ```
 limbo unblock <blocker-id> <blocked-id> [flags]
 ```
 
+**Remove manual block: `limbo unblock <id>`**
+
+Remove manual block and restore the task to its previous stage. Records a HistoryEntry.
+
+```
+limbo unblock <id> [flags]
+```
+
 **Flags**
 
 | Flag | Default | Description |
 |------|---------|-------------|
+| `--by` | `""` | Who unblocked the task |
 | `--pretty` | `false` | Human-readable output |
-
-**Output (JSON)**
-
-```json
-{"id": "abcd", "blockedBy": []}
-```
 
 **Errors**
 
-- `<blocked-id>` is not currently blocked by `<blocker-id>`.
+- Dependency unblock: task is not blocked by the specified blocker.
+- Manual unblock: task is not manually blocked.
 
 ---
 
@@ -617,7 +669,7 @@ limbo watch [flags]
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--interval` | `500ms` | Polling interval (e.g., `1s`, `200ms`) |
-| `--status` | `""` | Filter by status: `todo`, `in-progress`, or `done` |
+| `--status` | `""` | Filter by status (any valid lifecycle stage) |
 | `--show-all` | `false` | Show all tasks, including completed |
 | `--pretty` | `false` | Human-readable output: clears screen and redraws hierarchical tree |
 
@@ -748,7 +800,7 @@ limbo export
 **Output (JSON)**
 
 ```json
-{"version": "5.0.0", "tasks": [...]}
+{"version": "6.0.0", "tasks": [...]}
 ```
 
 The output includes full task data (content fields merged from context files). This can be imported with `limbo import`.

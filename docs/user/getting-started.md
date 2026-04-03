@@ -30,40 +30,59 @@ limbo's storage walks up directories to find `.limbo/` — the same way git find
 
 ## Basic Task Lifecycle
 
-Here is a concrete example of the typical workflow:
+limbo uses a 7-stage lifecycle: `captured → refined → planned → ready → in-progress → in-review → done`. Each forward transition enforces required fields (gates).
 
-**1. Add a top-level task:**
+**1. Add a task (starts as `captured`):**
 
 ```bash
 limbo add "Build the feature"
 ```
 
-This returns JSON including the new task's ID:
-
-```json
-{"id": "abcd", "name": "Build the feature", "status": "todo", ...}
-```
-
-**2. Add subtasks using the parent ID:**
+**2. Refine it (requires acceptance criteria and scope):**
 
 ```bash
-limbo add "Write tests" --parent abcd
-limbo add "Update documentation" --parent abcd
+limbo edit abcd --acceptance-criteria "Users can log in and out" --scope-out "No OAuth"
+limbo status abcd refined
 ```
 
-**3. Set a task to in-progress:**
+**3. Plan it (requires approach, affected areas, test strategy, risks):**
 
 ```bash
+limbo edit abcd --approach "JWT-based auth" --affected-areas "internal/auth/" \
+  --test-strategy "Unit + integration tests" --risks "Token rotation edge cases"
+limbo status abcd planned
+```
+
+**4. Mark ready (requires verify steps):**
+
+```bash
+limbo edit abcd --verify "go test ./internal/auth/... passes"
+limbo status abcd ready
+```
+
+**5. Claim and start:**
+
+```bash
+limbo claim abcd agent-1
 limbo status abcd in-progress
 ```
 
-**4. Complete a task:**
+**6. Submit for review (requires report):**
 
 ```bash
-limbo status abcd done
+limbo edit abcd --report "Added login/logout endpoints, all tests pass"
+limbo status abcd in-review
 ```
 
-Note: a task cannot be marked `done` if it has children that are not yet done. Complete all subtasks first.
+**7. Complete:**
+
+```bash
+limbo status abcd done --outcome "JWT auth implemented; 12 tests passing"
+```
+
+For simple tasks, you can populate all fields up front and jump multiple stages at once (all intermediate gates must pass).
+
+Note: a task cannot be marked `done` if it has children that are not yet done. Backward transitions require `--reason`.
 
 ## Viewing Tasks
 
@@ -104,7 +123,7 @@ limbo tree --show-all
 limbo next
 ```
 
-`limbo next` uses depth-first traversal to return the most relevant task to work on. It finds the deepest in-progress task and returns its todo children. If there are no in-progress tasks, it returns candidates from the top level. Blocked tasks are always skipped.
+`limbo next` uses depth-first traversal to return the most relevant task to work on. It finds the deepest in-progress task and returns its `ready` children. If there are no in-progress tasks, it returns `ready` candidates from the top level. Blocked tasks are always skipped. Only tasks in the `ready` stage appear in `next` results.
 
 When context exists (an in-progress task is found), the response looks like:
 

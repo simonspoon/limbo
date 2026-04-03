@@ -44,28 +44,38 @@ type Note struct {
 }
 
 type Task struct {
-    ID          string    `json:"id"`
-    Name        string    `json:"name"`
-    Description string    `json:"description,omitempty"`
-    Parent      *string   `json:"parent"`
-    Status      string    `json:"status"`
-    BlockedBy   []string  `json:"blockedBy,omitempty"`
-    Owner       *string   `json:"owner,omitempty"`
-    Notes       []Note    `json:"notes,omitempty"`
-    Created     time.Time `json:"created"`
-    Updated     time.Time `json:"updated"`
+    ID                 string         `json:"id"`
+    Name               string         `json:"name"`
+    Description        string         `json:"description,omitempty"`
+    Approach           string         `json:"approach,omitempty"`
+    // ... content fields (Verify, Result, Outcome, AcceptanceCriteria,
+    //     ScopeOut, AffectedAreas, TestStrategy, Risks, Report)
+    Parent             *string        `json:"parent"`
+    Status             string         `json:"status"`
+    BlockedBy          []string       `json:"blockedBy,omitempty"`
+    Owner              *string        `json:"owner,omitempty"`
+    Notes              []Note         `json:"notes,omitempty"`
+    History            []HistoryEntry `json:"history,omitempty"`
+    ManualBlockReason  string         `json:"manualBlockReason,omitempty"`
+    BlockedFromStage   string         `json:"blockedFromStage,omitempty"`
+    Created            time.Time      `json:"created"`
+    Updated            time.Time      `json:"updated"`
 }
 
 const (
-    StatusTodo       = "todo"
+    StatusCaptured   = "captured"
+    StatusRefined    = "refined"
+    StatusPlanned    = "planned"
+    StatusReady      = "ready"
     StatusInProgress = "in-progress"
+    StatusInReview   = "in-review"
     StatusDone       = "done"
 )
 ```
 
-`Parent` and `Owner` are nullable pointers so they serialize as `null` (not omitted) when unset. `BlockedBy`, `Notes`, and `Description` use `omitempty` and are absent from JSON when empty.
+`Parent` and `Owner` are nullable pointers so they serialize as `null` (not omitted) when unset. `BlockedBy`, `Notes`, `History`, and content fields use `omitempty` and are absent from JSON when empty.
 
-Helper functions: `IsValidStatus`, `IsValidTaskID` (enforces 4-character lowercase alpha), `NormalizeTaskID` (lowercases input for case-insensitive acceptance).
+Helper functions: `IsValidStatus`, `IsValidTaskID` (enforces 4-character lowercase alpha), `NormalizeTaskID` (lowercases input), `StageIndex` (returns position in the 7-stage lifecycle, -1 if invalid).
 
 ### internal/storage/storage.go
 
@@ -84,14 +94,14 @@ limbo uses a split storage model:
     tasks.json              # JSON index — metadata only
     context/                # Per-task content files
         <id>/
-            context.md      # H2-delimited markdown (action, verify, result, etc.)
+            context.md      # H2-delimited markdown (approach, verify, result, etc.)
             attachments/    # Reserved for future binary attachments
     archive.json            # Archived tasks (complete data, created by prune)
 ```
 
-**JSON index (`tasks.json`)** contains only fast-query metadata: id, name, status, parent, blockedBy, owner, created, updated. Content fields (description, action, verify, result, outcome, notes) are stored in per-task context files.
+**JSON index (`tasks.json`)** contains fast-query metadata (id, name, status, parent, blockedBy, owner, created, updated) plus structured operational fields (history, manualBlockReason, blockedFromStage). Content fields (description, approach, verify, result, outcome, acceptanceCriteria, scopeOut, affectedAreas, testStrategy, risks, report, notes) are stored in per-task context files.
 
-**Context files (`context/<id>/context.md`)** use H2-delimited markdown sections. Known sections are ordered: Action, Verify, Result, Outcome, Description, then custom sections alphabetically, Notes always last. Empty sections are omitted.
+**Context files (`context/<id>/context.md`)** use H2-delimited markdown sections. Known sections are ordered: Approach, Verify, Result, Outcome, AcceptanceCriteria, ScopeOut, AffectedAreas, TestStrategy, Risks, Report, Description, then custom sections alphabetically, Notes always last. Empty sections are omitted.
 
 The split is transparent to commands — `SaveTask` writes to both tiers, `LoadTask`/`LoadAll` merge them back into a single Task struct.
 
@@ -115,7 +125,7 @@ type TaskStore struct {
 }
 ```
 
-The current version string is `"5.0.0"`. Tasks in the JSON index have content fields stripped (empty strings / nil). The file is written with `json.MarshalIndent` using two-space indentation.
+The current version string is `"6.0.0"`. Tasks in the JSON index have content fields stripped (empty strings / nil), but metadata fields (`History`, `ManualBlockReason`, `BlockedFromStage`) are preserved. The file is written with `json.MarshalIndent` using two-space indentation.
 
 ### Storage struct
 
@@ -179,7 +189,7 @@ func (s *Storage) SaveTask(task *models.Task) error
 
 **DeleteTask** and **DeleteTasks** remove from the JSON index and delete the corresponding `context/<id>/` directory.
 
-**loadStore** / **saveStore** are unexported helpers that handle JSON marshaling and file I/O. `loadStore` also handles schema migration on first read: v2→v4 (int64 to string IDs), v3→v4 (add structured fields), v4→v5 (split content into context files). A backup is written before each migration.
+**loadStore** / **saveStore** are unexported helpers that handle JSON marshaling and file I/O. `loadStore` also handles schema migration on first read: v2→v4 (int64 to string IDs), v3→v4 (add structured fields), v4→v5 (split content into context files, Action→Approach), v5→v6 (7-stage lifecycle, todo→captured). All migrations chain. A backup is written before each step.
 
 ### Task ID Generation
 
@@ -210,7 +220,7 @@ type NextResult struct {
 }
 ```
 
-Exactly one of `Task` or `Candidates` is populated, or neither (when no work is available). `BlockedCount` is set when the result set is empty to indicate how many todo tasks are waiting on blockers.
+Exactly one of `Task` or `Candidates` is populated, or neither (when no work is available). `BlockedCount` is set when the result set is empty to indicate how many `ready` tasks are waiting on blockers.
 
 ### Step 1: Find the Deepest In-Progress Task
 
@@ -226,16 +236,16 @@ This identifies the "current focus" in the tree.
 
 Starting from the deepest in-progress task, the algorithm walks up the hierarchy (see `storage.go:246-275`):
 
-1. **Check todo children** of the current task via `getTodoChildren` — returns todo tasks whose `Parent` matches the current task ID, sorted by `Created` ascending, skipping blocked tasks.
+1. **Check ready children** of the current task via `getTodoChildren` — returns `ready`-status tasks whose `Parent` matches the current task ID, sorted by `Created` ascending, skipping blocked tasks.
 2. If children exist, return the first one as `{task: ...}` and stop.
-3. **Check todo siblings** via `getTodoSiblings` — returns todo tasks sharing the same parent, sorted by `Created` ascending, skipping blocked tasks.
+3. **Check ready siblings** via `getTodoSiblings` — returns `ready`-status tasks sharing the same parent, sorted by `Created` ascending, skipping blocked tasks.
 4. If siblings exist, return the first one as `{task: ...}` and stop.
 5. Move `current` to the parent task and repeat from step 1.
 6. If the root is reached with no results, return `{blockedCount: N}`.
 
 ### Step 3: No In-Progress Tasks
 
-When `getDeepestInProgress` returns nil (no in-progress tasks exist), `getRootTodos` collects all todo tasks with `Parent == nil`, skipping blocked tasks, sorted by `Created` ascending (see `storage.go:366-380`). These are returned as `{candidates: [...]}`.
+When `getDeepestInProgress` returns nil (no in-progress tasks exist), `getRootTodos` collects all `ready`-status tasks with `Parent == nil`, skipping blocked tasks, sorted by `Created` ascending. These are returned as `{candidates: [...]}`.
 
 ### Blocking Check
 
@@ -258,14 +268,20 @@ There is no in-memory cache; every storage method call performs a full file read
 
 ---
 
-## Dependency and Ownership Rules (Enforced in Commands)
+## Lifecycle, Dependency and Ownership Rules (Enforced in Commands)
 
 These constraints are enforced in the individual command files in `internal/commands/`, not in the storage layer:
 
-- A task cannot be marked `done` if it has undone descendants (`HasUndoneChildren`, see `storage.go:418`).
-- A task cannot be set to `in-progress` if it is blocked (`IsBlocked`, see `storage.go:608`).
+- **Gate validation**: Forward transitions enforce required fields at each gate (see Status Constants and Lifecycle in data-model.md). Multi-stage jumps validate all intermediate gates.
+- **Backward transitions** require `--reason` flag and skip gate validation.
+- **Manually blocked tasks** (`ManualBlockReason != ""`) cannot transition at all until unblocked.
+- A task cannot be marked `done` if it has undone descendants (`HasUndoneChildren`).
+- A task cannot transition to `in-progress` if it is dependency-blocked (`IsBlocked`) or not claimed.
 - Children cannot be added to a `done` task.
-- When a task is marked `done`, `RemoveFromAllBlockedBy` removes it from all other tasks' `BlockedBy` lists (see `storage.go:666`).
-- `WouldCreateCycle` uses BFS over the `BlockedBy` graph to detect dependency cycles before adding a new `block` edge (see `storage.go:628`).
+- When a task is marked `done`, `RemoveFromAllBlockedBy` removes it from all other tasks' `BlockedBy` lists.
+- `WouldCreateCycle` uses BFS over the `BlockedBy` graph to detect dependency cycles before adding a new `block` edge.
+- `block` with 1 arg + `--reason` creates a manual block; with 2 args creates a dependency block.
+- `unblock` with 1 arg removes a manual block and restores the previous stage; with 2 args removes a dependency.
 - `claim` fails if `Owner` is already set; `--force` overrides.
-- `delete` calls `OrphanChildren` to set `Parent = nil` on direct children before removing the task (see `storage.go:441`).
+- `delete` calls `OrphanChildren` to set `Parent = nil` on direct children before removing the task.
+- Every successful `status` transition records a `HistoryEntry` with from/to/by/at/reason.

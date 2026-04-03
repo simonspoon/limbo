@@ -33,7 +33,7 @@ limbo status abcd done --outcome "Implemented feature X; all tests pass"
 The `next` command returns one of two shapes:
 
 - `{"task": {...}}` -- when there is an in-progress context that narrows the result to a single suggestion
-- `{"candidates": [...]}` -- when no tasks are in-progress, returning all available top-level todos
+- `{"candidates": [...]}` -- when no tasks are in-progress, returning all available top-level `ready` tasks
 
 ## Multi-Agent Coordination
 
@@ -84,9 +84,11 @@ limbo list --unblocked            # tasks ready to start
 The `next` command uses depth-first traversal to support progressive decomposition workflows:
 
 1. It finds the deepest in-progress task in the hierarchy
-2. Returns that task's todo children first
-3. If no todo children exist, returns todo siblings
-4. If no todos at that level, walks up the hierarchy and repeats
+2. Returns that task's `ready` children first
+3. If no `ready` children exist, returns `ready` siblings
+4. If no `ready` tasks at that level, walks up the hierarchy and repeats
+
+Note: only tasks in the `ready` stage appear in `next` results. Tasks must pass through the planning stages (captured → refined → planned → ready) before they can be picked up.
 
 This means agents can break down large tasks on the fly:
 
@@ -99,15 +101,15 @@ limbo next
 limbo claim abcd agent-1
 limbo status abcd in-progress
 limbo add "Design auth schema" --parent abcd \
-  --action "Design the database schema for auth" \
+  --approach "Design the database schema for auth" \
   --verify "Schema reviewed and approved" \
   --result "Schema file path and summary of design decisions"
 limbo add "Implement login endpoint" --parent abcd \
-  --action "Implement POST /login in auth package" \
+  --approach "Implement POST /login in auth package" \
   --verify "go test ./internal/auth/... passes" \
   --result "Handler file path and passing test output"
 limbo add "Implement logout endpoint" --parent abcd \
-  --action "Implement POST /logout in auth package" \
+  --approach "Implement POST /logout in auth package" \
   --verify "go test ./internal/auth/... passes" \
   --result "Handler file path and passing test output"
 
@@ -144,8 +146,8 @@ Every event includes a `timestamp` field.
 Example events:
 
 ```json
-{"type":"snapshot","tasks":[{"id":"abcd","name":"Task 1","status":"todo",...}],"timestamp":"..."}
-{"type":"added","task":{"id":"efgh","name":"New task","status":"todo",...},"timestamp":"..."}
+{"type":"snapshot","tasks":[{"id":"abcd","name":"Task 1","status":"captured",...}],"timestamp":"..."}
+{"type":"added","task":{"id":"efgh","name":"New task","status":"captured",...},"timestamp":"..."}
 {"type":"updated","task":{"id":"abcd","name":"Task 1","status":"in-progress",...},"timestamp":"..."}
 {"type":"deleted","taskId":"abcd","timestamp":"..."}
 ```
@@ -218,4 +220,7 @@ limbo import backup.json --replace
 - Deleting a task orphans its children (sets their parent to nil)
 - `limbo prune` archives all `done` tasks (moves to `archive.json` and cleans up context directories)
 - Notes are append-only
-- Structured tasks (those created with `--action`, `--verify`, `--result`) require `--outcome` when marking `done`
+- Structured tasks (those created with `--approach`, `--verify`, `--result`) require `--outcome` when marking `done`
+- Forward transitions enforce gate validation (required fields per stage)
+- Backward transitions require `--reason`
+- Manual block (`limbo block <id> --reason "..."`) freezes a task; unblock (`limbo unblock <id>`) restores it

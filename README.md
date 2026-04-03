@@ -35,11 +35,11 @@ limbo init
 # Add tasks (simple or structured)
 limbo add "Fix login bug"
 limbo add "Implement user authentication" \
-  --action "Build JWT login and token refresh" \
+  --approach "Build JWT login and token refresh" \
   --verify "go test ./... passes" \
   --result "List of endpoints added and test output"
 limbo add "Add login endpoint" --parent <task-id> \
-  --action "Implement POST /login handler" \
+  --approach "Implement POST /login handler" \
   --verify "Integration test passes" \
   --result "Handler file path and test results"
 
@@ -64,12 +64,12 @@ limbo watch --pretty
 | Command | Description |
 |---------|-------------|
 | `init` | Initialize limbo in the current directory |
-| `add <name>` | Add a new task (`--action`, `--verify`, `--result`, `--parent`, `--description`/`-d` all optional) |
-| `edit <id>` | Edit a task's fields (`--name`, `--description`/`-d`, `--action`, `--verify`, `--result`) |
+| `add <name>` | Add a new task (`--approach`, `--verify`, `--result`, `--parent`, `--description`/`-d`, plus lifecycle fields) |
+| `edit <id>` | Edit a task's fields (`--name`, `--description`/`-d`, `--approach`, `--verify`, `--result`, plus lifecycle fields) |
 | `list` | List all tasks |
 | `tree` | Display tasks in a tree structure (`--show-all`) |
 | `show <id>` | Show details for a specific task |
-| `status <id> <status>` | Update task status (`todo`, `in-progress`, `done`); `--outcome` required for structured tasks when marking `done` |
+| `status <id> <status>` | Update task status (`captured`, `refined`, `planned`, `ready`, `in-progress`, `in-review`, `done`); gate validation enforced |
 | `next` | Get the next task to work on |
 | `parent <id> <parent-id>` | Set a task's parent |
 | `unparent <id>` | Remove a task's parent |
@@ -80,8 +80,8 @@ limbo watch --pretty
 | `archive restore <id>` | Restore an archived task to the active store |
 | `archive purge` | Permanently delete all archived tasks |
 | `watch` | Watch tasks for live updates |
-| `block <blocker> <blocked>` | Add dependency (blocked waits for blocker) |
-| `unblock <blocker> <blocked>` | Remove dependency |
+| `block <blocker> <blocked>` | Add dependency; or `block <id> --reason "..."` for manual block |
+| `unblock <blocker> <blocked>` | Remove dependency; or `unblock <id>` to remove manual block |
 | `note <id> "message"` | Add a timestamped note to a task |
 | `claim <id> <agent>` | Claim task ownership |
 | `unclaim <id>` | Release task ownership |
@@ -160,8 +160,9 @@ limbo status <prereq-id> done
 
 The `next` command uses depth-first traversal to support progressive decomposition:
 - Finds the deepest in-progress task
-- Returns its todo children (or siblings if none)
-- Walks up the hierarchy when no todos exist at the current level
+- Returns its `ready` children (or siblings if none)
+- Walks up the hierarchy when no `ready` tasks exist at the current level
+- Only surfaces tasks in the `ready` stage (must pass through planning gates first)
 
 This allows agents to break down large tasks into smaller subtasks just-in-time.
 
@@ -197,7 +198,7 @@ JSON mode outputs events:
 limbo uses two-tier storage within the `.limbo/` directory:
 
 - **`tasks.json`** — lightweight JSON index containing task metadata (id, name, status, parent, blockedBy, owner, timestamps)
-- **`context/<id>/context.md`** — per-task markdown file with content fields (description, action, verify, result, outcome, notes) using H2 sections
+- **`context/<id>/context.md`** — per-task markdown file with content fields (approach, verify, result, outcome, acceptance criteria, scope out, affected areas, test strategy, risks, report, description, notes) using H2 sections
 - **`archive.json`** — archived tasks (complete data, created by `limbo prune`)
 
 The storage system walks up directories to find the `.limbo/` folder (similar to how git finds `.git/`). The split is transparent — commands like `show` and `edit` merge both tiers automatically.
