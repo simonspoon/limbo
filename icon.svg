@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <rect width="16" height="16" fill="#0d1117"/>
+
+  <!-- Top frame — dark -->
+  <rect x="0" y="0" width="16" height="2" fill="#312e81"/>
+  <!-- Bottom frame — dark -->
+  <rect x="0" y="14" width="16" height="2" fill="#312e81"/>
+
+  <!-- Upper glass — main indigo -->
+  <rect x="1" y="2" width="14" height="1" fill="#6366f1"/>
+  <rect x="2" y="3" width="12" height="1" fill="#6366f1"/>
+  <rect x="3" y="4" width="10" height="1" fill="#6366f1"/>
+  <rect x="4" y="5" width="8" height="1" fill="#6366f1"/>
+  <rect x="5" y="6" width="6" height="1" fill="#6366f1"/>
+
+  <!-- Lower glass -->
+  <rect x="5" y="9" width="6" height="1" fill="#6366f1"/>
+  <rect x="4" y="10" width="8" height="1" fill="#6366f1"/>
+  <rect x="3" y="11" width="10" height="1" fill="#6366f1"/>
+  <rect x="2" y="12" width="12" height="1" fill="#6366f1"/>
+  <rect x="1" y="13" width="14" height="1" fill="#6366f1"/>
+
+  <!-- Upper highlight — light -->
+  <rect x="1" y="2" width="5" height="1" fill="#818cf8"/>
+  <rect x="2" y="3" width="4" height="1" fill="#818cf8"/>
+  <rect x="3" y="4" width="3" height="1" fill="#818cf8"/>
+
+  <!-- Sand particles falling (upper) -->
+  <rect x="5" y="3" width="1" height="1" fill="#a5b4fc"/>
+  <rect x="9" y="2" width="1" height="1" fill="#a5b4fc"/>
+  <rect x="7" y="4" width="1" height="1" fill="#a5b4fc"/>
+  <rect x="10" y="3" width="1" height="1" fill="#a5b4fc"/>
+
+  <!-- Neck — rift glow -->
+  <rect x="6" y="6" width="4" height="1" fill="#818cf8"/>
+  <rect x="6" y="7" width="4" height="2" fill="#c7d2fe"/>
+  <rect x="7" y="7" width="2" height="2" fill="#e0e7ff"/>
+  <rect x="6" y="9" width="4" height="1" fill="#818cf8"/>
+
+  <!-- Sand accumulated (lower) — darker shade -->
+  <rect x="3" y="12" width="10" height="1" fill="#4f46e5"/>
+  <rect x="2" y="13" width="12" height="1" fill="#4f46e5"/>
+
+  <!-- Frame accents — corner rivets -->
+  <rect x="0" y="0" width="2" height="1" fill="#1e1b4b"/>
+  <rect x="14" y="0" width="2" height="1" fill="#1e1b4b"/>
+  <rect x="0" y="15" width="2" height="1" fill="#1e1b4b"/>
+  <rect x="14" y="15" width="2" height="1" fill="#1e1b4b"/>
+</svg>

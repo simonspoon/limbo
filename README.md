@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="icon.png" width="128" height="128" alt="limbo">
+</p>
+
 # limbo
 
 A CLI-based task manager designed for use by LLMs and AI agents.
