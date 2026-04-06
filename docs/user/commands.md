@@ -148,8 +148,8 @@ Valid values for `<status>`: `captured`, `refined`, `planned`, `ready`, `in-prog
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--outcome` | `""` | Actual result to record when marking done |
-| `--reason` | `""` | Required for backward transitions (e.g., refined → captured) |
+| `--outcome` | `""` | Actual result to record when marking done (optional) |
+| `--reason` | `""` | Reason for transition, recorded in history (optional) |
 | `--by` | `""` | Who triggered the transition (recorded in history) |
 | `--pretty` | `false` | Human-readable output |
 
@@ -159,29 +159,14 @@ Valid values for `<status>`: `captured`, `refined`, `planned`, `ready`, `in-prog
 {"id": "abcd", "status": "done"}
 ```
 
-**Gate validation**
+**Behavior**
 
-Forward transitions enforce required fields at each step:
+limbo is a pure task store -- status transitions have no field requirements. Any valid status can be set at any time.
 
-| Transition | Required fields |
-|-----------|----------------|
-| captured → refined | `acceptance_criteria`, `scope_out` |
-| refined → planned | `approach`, `affected_areas`, `test_strategy`, `risks` |
-| planned → ready | `verify` |
-| ready → in-progress | task must be claimed (has owner) |
-| in-progress → in-review | `report` |
-| in-review → done | `outcome` |
+**Constraints**
 
-Multi-stage jumps (e.g., captured → planned) validate all intermediate gates. If any gate fails, the transition is rejected with a message listing the missing fields.
-
-**Constraints and errors**
-
-- Forward transitions are the default. Backward transitions require `--reason`.
 - Manually blocked tasks cannot transition until unblocked.
-- Cannot transition to `in-progress` if dependency-blocked (`blockedBy` contains incomplete tasks).
-- Cannot mark `done` if the task has undone children.
 - When marked `done`, the task is auto-removed from all other tasks' `blockedBy` lists.
-- Structured tasks (those with `approach`, `verify`, and `result` all set) require `--outcome` when marking `done`.
 - Every transition records a `HistoryEntry` (from, to, by, at, reason).
 
 ---
@@ -446,50 +431,6 @@ The `blockers` field resolves each ID in `blockedBy` to `{id, name, status}`. Th
 
 ---
 
-### `limbo next`
-
-Return the next task to work on, using depth-first traversal.
-
-**Usage**
-
-```
-limbo next [flags]
-```
-
-**Flags**
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--unclaimed` | `false` | Skip tasks that have an owner |
-| `--pretty` | `false` | Human-readable output |
-
-**Output (JSON)**
-
-The output shape varies depending on context:
-
-- When in-progress tasks exist, returns the narrowed next task:
-  ```json
-  {"task": { ...task object... }}
-  ```
-
-- When no in-progress tasks exist, returns a list of root-level candidates:
-  ```json
-  {"candidates": [ ...task objects... ]}
-  ```
-
-- When all remaining tasks are blocked:
-  ```json
-  {"blockedCount": 3}
-  ```
-
-**Traversal behavior**
-
-When in-progress tasks exist, `next` finds the deepest in-progress task in the hierarchy, then returns its `ready` children. If there are no `ready` children, it returns `ready` siblings. It walks up the hierarchy as needed. Blocked tasks are always skipped. With `--unclaimed`, tasks that have an owner are also skipped.
-
-Note: `next` only surfaces tasks in the `ready` stage — tasks must pass through the planning stages (captured → refined → planned → ready) before they appear in `next` results.
-
----
-
 ## Dependencies
 
 ### `limbo block`
@@ -702,86 +643,6 @@ Clears the terminal screen on each tick and redraws the task hierarchy as a tree
 **Visibility**
 
 By default, "fully resolved" done tasks are hidden. See the [Visibility Rules](#visibility-rules) section.
-
----
-
-## Templates
-
-### `limbo template list`
-
-List all available templates (built-in and project-local).
-
-**Usage**
-
-```
-limbo template list [flags]
-```
-
-**Flags**
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--pretty` | `false` | Human-readable output |
-
-**Output (JSON)**
-
-```json
-[{"name": "bug-fix", "description": "..."}, {"name": "feature", "description": "..."}]
-```
-
-**Built-in templates:** `bug-fix`, `feature`, `swe-full-cycle`.
-
----
-
-### `limbo template show <name>`
-
-Display the task hierarchy a template would create without actually creating any tasks.
-
-**Usage**
-
-```
-limbo template show <name> [flags]
-```
-
-**Flags**
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--pretty` | `false` | Human-readable tree output |
-
-**Output (JSON)**
-
-Returns the full template definition with task hierarchy.
-
----
-
-### `limbo template apply <name>`
-
-Apply a template, creating all tasks with parent/child relationships and block dependencies.
-
-**Usage**
-
-```
-limbo template apply <name> [flags]
-```
-
-**Flags**
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--parent` | `""` | Parent task ID to nest the template's tasks under |
-| `--pretty` | `false` | Human-readable output |
-
-**Output (JSON)**
-
-```json
-{"createdIDs": ["abcd", "efgh", "ijkl", ...]}
-```
-
-**Notes**
-
-- `--pretty` is a persistent flag — it applies to all `template` subcommands.
-- Templates define task hierarchies with dependencies pre-wired. Use `template show` to preview before applying.
 
 ---
 

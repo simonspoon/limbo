@@ -76,7 +76,7 @@ type Task struct {
 func (t *Task) HasStructuredFields() bool
 ```
 
-Returns `true` when `Approach`, `Verify`, and `Result` are all non-empty. Used to distinguish structured tasks from unstructured ones (e.g., quick tasks added without workflow metadata).
+Returns `true` when `Approach`, `Verify`, and `Result` are all non-empty. This is a utility method on the model; limbo does not use it for enforcement. External tools may use it to distinguish structured tasks from unstructured ones.
 
 ---
 
@@ -157,22 +157,11 @@ var StageOrder = []string{
 | `StatusInReview` | `"in-review"` | Implementation complete, under independent verification. |
 | `StatusDone` | `"done"` | Work is complete and verified. |
 
-### Gate Validation
+### Status Transitions
 
-Transitions are forward-only by default. Each forward transition enforces required fields (gates):
+limbo is a pure task store -- status transitions have no field requirements. Any valid status can be set at any time, in any direction. The only constraint is that manually blocked tasks cannot transition until unblocked.
 
-| Transition | Required fields |
-|-----------|----------------|
-| captured → refined | `AcceptanceCriteria`, `ScopeOut` |
-| refined → planned | `Approach`, `AffectedAreas`, `TestStrategy`, `Risks` |
-| planned → ready | `Verify` (must be non-empty) |
-| ready → in-progress | `Owner` (task must be claimed), not dependency-blocked |
-| in-progress → in-review | `Report` |
-| in-review → done | `Outcome`, no undone children |
-
-Multi-stage forward jumps (e.g., captured → planned) validate all intermediate gates.
-
-Backward transitions are allowed but require the `--reason` flag. They skip gate validation.
+Workflow rules (e.g., requiring specific fields before advancing stages) are enforced by the orchestrator/agent layer, not by limbo.
 
 ### Manual Block
 

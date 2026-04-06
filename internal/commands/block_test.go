@@ -240,41 +240,6 @@ func TestUnblockCommand_NotBlocked(t *testing.T) {
 	assert.Contains(t, err.Error(), "not blocked")
 }
 
-func TestNextCommand_SkipsBlockedTasks(t *testing.T) {
-	_, cleanup := setupTestEnv(t)
-	defer cleanup()
-
-	store, err := storage.NewStorage()
-	require.NoError(t, err)
-
-	now := time.Now()
-	blocker := &models.Task{
-		ID:      "aaaa",
-		Name:    "Blocker Task",
-		Status:  models.StatusReady,
-		Created: now,
-		Updated: now,
-	}
-	require.NoError(t, store.SaveTask(blocker))
-
-	blocked := &models.Task{
-		ID:        "aaab",
-		Name:      "Blocked Task",
-		Status:    models.StatusReady,
-		BlockedBy: []string{blocker.ID},
-		Created:   now.Add(time.Millisecond),
-		Updated:   now.Add(time.Millisecond),
-	}
-	require.NoError(t, store.SaveTask(blocked))
-
-	// next should return blocker, not blocked
-	result, err := store.GetNextTask()
-	require.NoError(t, err)
-	require.NotEmpty(t, result.Candidates)
-	assert.Equal(t, "Blocker Task", result.Candidates[0].Name)
-	assert.Len(t, result.Candidates, 1) // blocked task should be filtered out
-}
-
 func TestManualBlock_Success(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()

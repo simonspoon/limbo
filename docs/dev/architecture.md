@@ -197,62 +197,6 @@ IDs are 4-character lowercase alphabetic strings (e.g., `abcd`). `GenerateTaskID
 
 ---
 
-## GetNextTask: Depth-First Algorithm
-
-`GetNextTask` and `GetNextTaskFiltered` implement the depth-first traversal used by the `next` command (see `storage.go:219-277`).
-
-### Entry Points
-
-```go
-func (s *Storage) GetNextTask() (*NextResult, error)
-func (s *Storage) GetNextTaskFiltered(unclaimedOnly bool) (*NextResult, error)
-```
-
-`GetNextTask` delegates to `GetNextTaskFiltered(false)`. When `unclaimedOnly` is true, tasks that have a non-nil `Owner` are excluded from results.
-
-### NextResult
-
-```go
-type NextResult struct {
-    Task         *models.Task  `json:"task,omitempty"`
-    Candidates   []models.Task `json:"candidates,omitempty"`
-    BlockedCount int           `json:"blockedCount,omitempty"`
-}
-```
-
-Exactly one of `Task` or `Candidates` is populated, or neither (when no work is available). `BlockedCount` is set when the result set is empty to indicate how many `ready` tasks are waiting on blockers.
-
-### Step 1: Find the Deepest In-Progress Task
-
-`getDeepestInProgress` locates the in-progress task that has no in-progress children (see `storage.go:291-310`):
-
-1. Build a set of task IDs that have at least one in-progress child.
-2. Scan all tasks; any in-progress task not in that set is a leaf candidate.
-3. Among candidates, pick the one with the earliest `Created` timestamp (oldest first).
-
-This identifies the "current focus" in the tree.
-
-### Step 2: Walk Up from the Deepest Task
-
-Starting from the deepest in-progress task, the algorithm walks up the hierarchy (see `storage.go:246-275`):
-
-1. **Check ready children** of the current task via `getTodoChildren` — returns `ready`-status tasks whose `Parent` matches the current task ID, sorted by `Created` ascending, skipping blocked tasks.
-2. If children exist, return the first one as `{task: ...}` and stop.
-3. **Check ready siblings** via `getTodoSiblings` — returns `ready`-status tasks sharing the same parent, sorted by `Created` ascending, skipping blocked tasks.
-4. If siblings exist, return the first one as `{task: ...}` and stop.
-5. Move `current` to the parent task and repeat from step 1.
-6. If the root is reached with no results, return `{blockedCount: N}`.
-
-### Step 3: No In-Progress Tasks
-
-When `getDeepestInProgress` returns nil (no in-progress tasks exist), `getRootTodos` collects all `ready`-status tasks with `Parent == nil`, skipping blocked tasks, sorted by `Created` ascending. These are returned as `{candidates: [...]}`.
-
-### Blocking Check
-
-`isTaskBlocked` returns true if any ID in `task.BlockedBy` refers to a task whose status is not `done` (see `storage.go:394-405`). A missing blocker (deleted task) is treated as non-blocking.
-
----
-
 ## Data Flow
 
 A typical command execution follows this path:
@@ -272,11 +216,8 @@ There is no in-memory cache; every storage method call performs a full file read
 
 These constraints are enforced in the individual command files in `internal/commands/`, not in the storage layer:
 
-- **Gate validation**: Forward transitions enforce required fields at each gate (see Status Constants and Lifecycle in data-model.md). Multi-stage jumps validate all intermediate gates.
-- **Backward transitions** require `--reason` flag and skip gate validation.
+- **No gate validation**: limbo is a pure task store. Status transitions are unconditional (except for manual blocks).
 - **Manually blocked tasks** (`ManualBlockReason != ""`) cannot transition at all until unblocked.
-- A task cannot be marked `done` if it has undone descendants (`HasUndoneChildren`).
-- A task cannot transition to `in-progress` if it is dependency-blocked (`IsBlocked`) or not claimed.
 - Children cannot be added to a `done` task.
 - When a task is marked `done`, `RemoveFromAllBlockedBy` removes it from all other tasks' `BlockedBy` lists.
 - `WouldCreateCycle` uses BFS over the `BlockedBy` graph to detect dependency cycles before adding a new `block` edge.

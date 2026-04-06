@@ -6,7 +6,7 @@ This index helps you find the right documentation for your current task. Read on
 
 | Topic | File | When to read |
 |-------|------|-------------|
-| Architecture | [dev/architecture.md](dev/architecture.md) | Onboarding, understanding package relationships, data flow, the GetNextTask algorithm |
+| Architecture | [dev/architecture.md](dev/architecture.md) | Onboarding, understanding package relationships, data flow |
 | Data Model | [dev/data-model.md](dev/data-model.md) | Working with Task/Note/WatchEvent types, understanding JSON output format |
 | Contributing | [dev/contributing.md](dev/contributing.md) | Adding features, adding commands, running tests, PR checklist |
 

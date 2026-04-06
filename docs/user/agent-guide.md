@@ -5,18 +5,17 @@ limbo is a CLI task manager built specifically for LLMs and AI agents. This guid
 ## Why limbo for agents
 
 - **JSON output by default** -- every command returns machine-parseable JSON, no scraping needed
-- **Depth-first `next` command** -- supports progressive decomposition, letting agents break large tasks into subtasks and work through them systematically
+- **Pure task store** -- no workflow logic, no gate validation. Agents/orchestrators enforce their own rules
 - **Ownership system** -- multiple agents can coordinate on the same task queue without conflicts
 - **File-based storage** -- `.limbo/` directory with a JSON index and per-task context files, no server or daemon required
 
 ## Single-Agent Workflow
 
-A basic agent loop: get the next task, claim it, do the work, mark it done.
+A basic agent loop: find available work, claim it, do the work, mark it done.
 
 ```bash
-# Check for next task
-limbo next
-# Returns: {"task": {"id": "abcd", "name": "Implement feature X", ...}}
+# Find available work
+limbo list --status ready --unblocked
 
 # Claim and start
 limbo claim abcd agent-1
@@ -26,14 +25,9 @@ limbo status abcd in-progress
 limbo note abcd "Started implementation"
 limbo note abcd "Found edge case, handling it"
 
-# Complete (--outcome required for structured tasks)
+# Complete
 limbo status abcd done --outcome "Implemented feature X; all tests pass"
 ```
-
-The `next` command returns one of two shapes:
-
-- `{"task": {...}}` -- when there is an in-progress context that narrows the result to a single suggestion
-- `{"candidates": [...]}` -- when no tasks are in-progress, returning all available top-level `ready` tasks
 
 ## Multi-Agent Coordination
 
@@ -43,11 +37,8 @@ When multiple agents share the same task queue, use ownership and dependencies t
 
 ```bash
 # Agent picks an unclaimed task
-limbo next --unclaimed
+limbo list --status ready --unblocked --unclaimed
 limbo claim <id> agent-1
-
-# Other agents skip claimed tasks
-limbo next --unclaimed  # won't return agent-1's task
 ```
 
 `limbo claim` fails if the task is already owned by another agent. Use `--force` to override ownership if needed.
@@ -60,8 +51,8 @@ Dependencies prevent agents from starting work before prerequisites are complete
 # Mark task B as blocked by task A
 limbo block <prereq-id> <dependent-id>
 
-# The dependent task won't appear in `next` until the prereq is done
-limbo next  # skips blocked tasks
+# The dependent won't appear in --unblocked results until the prereq is done
+limbo list --status ready --unblocked  # skips blocked tasks
 
 # When the prereq is marked done, it's auto-removed from all BlockedBy lists
 limbo status <prereq-id> done
@@ -81,23 +72,10 @@ limbo list --unblocked            # tasks ready to start
 
 ## Progressive Decomposition
 
-The `next` command uses depth-first traversal to support progressive decomposition workflows:
-
-1. It finds the deepest in-progress task in the hierarchy
-2. Returns that task's `ready` children first
-3. If no `ready` children exist, returns `ready` siblings
-4. If no `ready` tasks at that level, walks up the hierarchy and repeats
-
-Note: only tasks in the `ready` stage appear in `next` results. Tasks must pass through the planning stages (captured → refined → planned → ready) before they can be picked up.
-
-This means agents can break down large tasks on the fly:
+Agents can break down large tasks into subtasks using parent/child relationships:
 
 ```bash
-# Agent gets a broad task
-limbo next
-# {"task": {"id": "abcd", "name": "Build authentication system"}}
-
-# Agent decomposes it into subtasks
+# Agent decomposes a broad task into subtasks
 limbo claim abcd agent-1
 limbo status abcd in-progress
 limbo add "Design auth schema" --parent abcd \
@@ -108,17 +86,12 @@ limbo add "Implement login endpoint" --parent abcd \
   --approach "Implement POST /login in auth package" \
   --verify "go test ./internal/auth/... passes" \
   --result "Handler file path and passing test output"
-limbo add "Implement logout endpoint" --parent abcd \
-  --approach "Implement POST /logout in auth package" \
-  --verify "go test ./internal/auth/... passes" \
-  --result "Handler file path and passing test output"
 
-# Next call now returns the first subtask
-limbo next
-# {"task": {"id": "efgh", "name": "Design auth schema"}}
+# Find available subtasks
+limbo list --status ready --unblocked
 ```
 
-A task cannot be marked `done` if it has undone children, so agents must complete all subtasks before finishing the parent.
+The orchestrator/agent layer is responsible for deciding which task to pick up next. limbo provides the data (hierarchy, status, blocking) but does not implement scheduling logic.
 
 ## Watch Mode for Orchestrators
 
@@ -175,28 +148,6 @@ limbo watch --interval 1s
 limbo watch --show-all
 ```
 
-## Templates
-
-Templates scaffold entire task hierarchies with a single command. Use them instead of manually creating tasks with `limbo add`.
-
-**Built-in templates:** `bug-fix`, `feature`, `swe-full-cycle`.
-
-```bash
-# List available templates
-limbo template list
-
-# Preview what a template creates
-limbo template show swe-full-cycle --pretty
-
-# Apply a template — creates all tasks with dependencies pre-wired
-limbo template apply feature
-
-# Nest a template under an existing parent task
-limbo template apply bug-fix --parent abcd
-```
-
-Templates define parent/child relationships and block dependencies, so agents don't need to wire them manually. Prefer `template apply` over decomposing tasks by hand when a matching template exists.
-
 ## Backup and Transfer
 
 Export and import tasks between projects or for backup:
@@ -214,13 +165,13 @@ limbo import backup.json --replace
 
 ## Key Constraints
 
-- Tasks cannot be marked `done` if they have undone children
-- Tasks cannot be set to `in-progress` if they are blocked by incomplete dependencies
+- limbo is a pure task store -- no gate validation, no field requirements for status transitions
+- `--outcome`, `--approach`, `--verify`, `--result` are all optional flags (recommended but not enforced)
+- `--reason` is optional for all transitions (useful for audit trail)
 - Children cannot be added to `done` tasks
 - Deleting a task orphans its children (sets their parent to nil)
 - `limbo prune` archives all `done` tasks (moves to `archive.json` and cleans up context directories)
 - Notes are append-only
-- Structured tasks (those created with `--approach`, `--verify`, `--result`) require `--outcome` when marking `done`
-- Forward transitions enforce gate validation (required fields per stage)
-- Backward transitions require `--reason`
+- Manually blocked tasks cannot transition until unblocked
+- When marked `done`, auto-removed from all other tasks' `blockedBy` lists
 - Manual block (`limbo block <id> --reason "..."`) freezes a task; unblock (`limbo unblock <id>`) restores it

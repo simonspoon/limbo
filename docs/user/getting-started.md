@@ -80,9 +80,7 @@ limbo status abcd in-review
 limbo status abcd done --outcome "JWT auth implemented; 12 tests passing"
 ```
 
-For simple tasks, you can populate all fields up front and jump multiple stages at once (all intermediate gates must pass).
-
-Note: a task cannot be marked `done` if it has children that are not yet done. Backward transitions require `--reason`.
+limbo is a pure task store -- status transitions have no field requirements. You can jump to any status at any time.
 
 ## Viewing Tasks
 
@@ -117,24 +115,17 @@ limbo list --show-all
 limbo tree --show-all
 ```
 
-## Getting the Next Task
+## Finding Available Work
 
 ```bash
-limbo next
+limbo list --status ready --unblocked
 ```
 
-`limbo next` uses depth-first traversal to return the most relevant task to work on. It finds the deepest in-progress task and returns its `ready` children. If there are no in-progress tasks, it returns `ready` candidates from the top level. Blocked tasks are always skipped. Only tasks in the `ready` stage appear in `next` results.
+Use `list` with filters to find tasks that are ready to work on. Combine flags for specific queries:
 
-When context exists (an in-progress task is found), the response looks like:
-
-```json
-{"task": {"id": "abcd", "name": "Write tests", ...}}
-```
-
-When no task is in-progress, it returns candidates:
-
-```json
-{"candidates": [...]}
+```bash
+limbo list --status ready --unblocked --unclaimed  # Unowned ready tasks
+limbo list --blocked                                # Tasks waiting on dependencies
 ```
 
 ## Output Format
@@ -144,5 +135,4 @@ All commands output JSON by default. Add `--pretty` to any command for human-rea
 ```bash
 limbo list --pretty
 limbo show abcd --pretty
-limbo next --pretty
 ```

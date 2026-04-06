@@ -52,12 +52,9 @@ limbo list                    # JSON output
 limbo list --pretty           # Human-readable output
 limbo tree                    # Hierarchical view (pretty by default)
 
-# Update task status
+# Update task status (no gate validation -- pure task store)
 limbo status <task-id> in-progress
 limbo status <task-id> done --outcome "Implemented; all tests pass"
-
-# Get next task (depth-first traversal)
-limbo next
 
 # Watch for changes
 limbo watch --pretty
@@ -73,8 +70,7 @@ limbo watch --pretty
 | `list` | List all tasks |
 | `tree` | Display tasks in a tree structure (`--show-all`) |
 | `show <id>` | Show details for a specific task |
-| `status <id> <status>` | Update task status (`captured`, `refined`, `planned`, `ready`, `in-progress`, `in-review`, `done`); gate validation enforced |
-| `next` | Get the next task to work on |
+| `status <id> <status>` | Update task status (`captured`, `refined`, `planned`, `ready`, `in-progress`, `in-review`, `done`) |
 | `parent <id> <parent-id>` | Set a task's parent |
 | `unparent <id>` | Remove a task's parent |
 | `delete <id>` | Delete a task |
@@ -90,9 +86,6 @@ limbo watch --pretty
 | `claim <id> <agent>` | Claim task ownership |
 | `unclaim <id>` | Release task ownership |
 | `search <query>` | Search tasks by name or description (case-insensitive) |
-| `template list` | List available task templates |
-| `template show <name>` | Preview a template's task hierarchy |
-| `template apply <name>` | Apply a template to create tasks (`--parent`) |
 | `export` | Export all tasks as JSON to stdout |
 | `import <file>` | Import tasks from a JSON file (`--replace`) |
 
@@ -113,20 +106,14 @@ The `list` command supports filtering:
 - `--blocked` / `--unblocked` - Filter by blocked state
 - `--show-all` - Show all tasks including completed
 
-The `next` command supports:
-- `--unclaimed` - Skip tasks that have an owner
-
 ## Usage with AI Agents
 
 limbo is designed for integration with LLMs and AI agents like Claude Code. The JSON output makes it easy to parse task information programmatically.
 
 Example workflow:
 ```bash
-# Agent checks for next task
-limbo next
-
-# Returns JSON like:
-# {"task": {"id": "abcd", "name": "Implement feature X", ...}}
+# Agent finds available work
+limbo list --status ready --unblocked
 
 # Agent claims and starts task
 limbo claim abcd agent-1
@@ -136,7 +123,7 @@ limbo status abcd in-progress
 limbo note abcd "Started implementation"
 limbo note abcd "Found edge case, handling it"
 
-# Agent completes work, marks done (--outcome required for structured tasks)
+# Agent completes work, marks done
 limbo status abcd done --outcome "Implemented feature X; all tests pass"
 ```
 
@@ -145,30 +132,17 @@ limbo status abcd done --outcome "Implemented feature X; all tests pass"
 limbo supports multiple agents working on the same task queue:
 
 ```bash
-# Agent claims an unclaimed task
-limbo next --unclaimed
+# Agent finds and claims an unclaimed task
+limbo list --status ready --unblocked --unclaimed
 limbo claim <id> agent-1
-
-# Other agents skip claimed tasks
-limbo next --unclaimed  # won't return agent-1's task
 
 # Set up task dependencies
 limbo block <prereq-id> <dependent-id>
-# dependent task won't appear in `next` until prereq is done
+# dependent won't appear in --unblocked results until prereq is done
 
 # When prereq completes, dependent is auto-unblocked
 limbo status <prereq-id> done
 ```
-
-### Progressive Decomposition
-
-The `next` command uses depth-first traversal to support progressive decomposition:
-- Finds the deepest in-progress task
-- Returns its `ready` children (or siblings if none)
-- Walks up the hierarchy when no `ready` tasks exist at the current level
-- Only surfaces tasks in the `ready` stage (must pass through planning gates first)
-
-This allows agents to break down large tasks into smaller subtasks just-in-time.
 
 ### Watch Mode
 
