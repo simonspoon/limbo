@@ -69,7 +69,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 	}
 
 	// Validate transition constraints
-	if err := validateStatusTransition(task, newStatus); err != nil {
+	if err := validateStatusTransition(task); err != nil {
 		return err
 	}
 
@@ -116,7 +116,7 @@ func printStatusUpdate(task *models.Task) {
 	}
 }
 
-func validateStatusTransition(task *models.Task, newStatus string) error {
+func validateStatusTransition(task *models.Task) error {
 	// Manually blocked tasks cannot transition at all
 	if task.ManualBlockReason != "" {
 		return fmt.Errorf("cannot transition task %s: manually blocked (%s)", task.ID, task.ManualBlockReason)
