@@ -34,6 +34,27 @@ var knownSectionOrder = map[string]int{
 	"Description":        10,
 }
 
+// knownSectionNames is the allow-list of "## <name>" headings that
+// parseContextFile recognizes as section boundaries. Any other "## " line
+// is treated as part of the current section's content. This lets content
+// fields (Description, Approach, etc.) contain arbitrary markdown headings
+// without getting truncated on read.
+//
+// The set includes every key of knownSectionOrder plus:
+//   - "Notes"  — written by AppendNote
+//   - "Action" — legacy v4→v5 compat; mergeContext falls back to Action
+//     when Approach is empty, and migrateFromV5 rewrites Action→Approach
+//     by reading parsed sections.
+var knownSectionNames = func() map[string]bool {
+	m := make(map[string]bool, len(knownSectionOrder)+2)
+	for name := range knownSectionOrder {
+		m[name] = true
+	}
+	m["Notes"] = true
+	m["Action"] = true
+	return m
+}()
+
 // ContextDir returns the path to a task's context directory.
 func (s *Storage) ContextDir(id string) string {
 	return filepath.Join(s.rootDir, LimboDir, ContextDirName, id)
@@ -194,6 +215,16 @@ func parseNoteHeading(heading string) (time.Time, string) {
 }
 
 // parseContextFile parses a context.md file into a section map.
+//
+// Only "## <name>" lines whose <name> is in knownSectionNames are treated
+// as section boundaries. Any other "## ..." line is kept verbatim as part
+// of the current section's content, so content fields can safely contain
+// markdown subheadings.
+//
+// Residual limitation: a content field that contains a literal "## <name>"
+// line where <name> happens to be a known section (e.g. a Description that
+// contains a line "## Approach") will still be hijacked and split into two
+// sections. Avoid embedding literal known-section headings inside content.
 func parseContextFile(content string) map[string]string {
 	sections := make(map[string]string)
 	if strings.TrimSpace(content) == "" {
@@ -212,13 +243,24 @@ func parseContextFile(content string) map[string]string {
 		}
 
 		if !inCodeBlock && strings.HasPrefix(line, "## ") {
-			// Flush previous section
-			if currentSection != "" {
-				sections[currentSection] = normalizeSectionContent(currentLines)
+			name := strings.TrimSpace(strings.TrimPrefix(line, "## "))
+			if knownSectionNames[name] {
+				// Flush previous section
+				if currentSection != "" {
+					sections[currentSection] = normalizeSectionContent(currentLines)
+				}
+				currentSection = name
+				currentLines = nil
+				continue
 			}
-			currentSection = strings.TrimSpace(strings.TrimPrefix(line, "## "))
-			currentLines = nil
-		} else if currentSection != "" {
+			// Unknown "## ..." heading — treat as section content.
+			if currentSection != "" {
+				currentLines = append(currentLines, line)
+			}
+			continue
+		}
+
+		if currentSection != "" {
 			currentLines = append(currentLines, line)
 		}
 	}

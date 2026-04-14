@@ -48,15 +48,15 @@ func TestWriteAndReadContext_RoundTrip(t *testing.T) {
 func TestWriteContext_SectionOrdering(t *testing.T) {
 	store := setupContextTest(t)
 
-	// Write in random order
+	// Write in random order (known sections only — custom "## Foo"
+	// headings inside content are now preserved in place by parseContextFile
+	// rather than round-tripping as top-level sections).
 	sections := map[string]string{
 		"Notes":       "### 2026-02-20T10:00:00Z\nStarted",
 		"Description": "Some desc",
 		"Verify":      "Run tests",
 		"Approach":    "Do the thing",
-		"Zebra":       "Custom section Z",
 		"Result":      "Report back",
-		"Alpha":       "Custom section A",
 		"Outcome":     "It worked",
 	}
 
@@ -69,22 +69,18 @@ func TestWriteContext_SectionOrdering(t *testing.T) {
 	content := string(data)
 
 	// Find positions of each section header
-	actionPos := indexOf(content, "## Approach")
+	approachPos := indexOf(content, "## Approach")
 	verifyPos := indexOf(content, "## Verify")
 	resultPos := indexOf(content, "## Result")
 	outcomePos := indexOf(content, "## Outcome")
 	descPos := indexOf(content, "## Description")
-	alphaPos := indexOf(content, "## Alpha")
-	zebraPos := indexOf(content, "## Zebra")
 	notesPos := indexOf(content, "## Notes")
 
-	assert.True(t, actionPos < verifyPos, "Action should come before Verify")
+	assert.True(t, approachPos < verifyPos, "Approach should come before Verify")
 	assert.True(t, verifyPos < resultPos, "Verify should come before Result")
 	assert.True(t, resultPos < outcomePos, "Result should come before Outcome")
 	assert.True(t, outcomePos < descPos, "Outcome should come before Description")
-	assert.True(t, descPos < alphaPos, "Description should come before Alpha (custom)")
-	assert.True(t, alphaPos < zebraPos, "Alpha should come before Zebra (alphabetical)")
-	assert.True(t, zebraPos < notesPos, "Zebra should come before Notes (Notes always last)")
+	assert.True(t, descPos < notesPos, "Description should come before Notes (Notes always last)")
 }
 
 func TestWriteContext_EmptySectionsOmitted(t *testing.T) {
@@ -415,6 +411,136 @@ func TestMergeContext_ActionFallback(t *testing.T) {
 
 	assert.Equal(t, "Do the old thing", task.Approach)
 	assert.Equal(t, "Check it", task.Verify)
+}
+
+func TestParseContextFile_H2InsideSectionPreserved(t *testing.T) {
+	cases := []struct {
+		name    string
+		content string
+		section string
+		want    string
+	}{
+		{
+			name: "description with h2 between paragraphs",
+			content: "## Description\n" +
+				"First paragraph.\n" +
+				"\n" +
+				"## SomeHeading\n" +
+				"\n" +
+				"Second paragraph.\n",
+			section: "Description",
+			want: "First paragraph.\n" +
+				"\n" +
+				"## SomeHeading\n" +
+				"\n" +
+				"Second paragraph.",
+		},
+		{
+			name: "approach with multiple unknown h2 lines",
+			content: "## Approach\n" +
+				"Intro.\n" +
+				"\n" +
+				"## Step One\n" +
+				"Do A.\n" +
+				"\n" +
+				"## Step Two\n" +
+				"Do B.\n",
+			section: "Approach",
+			want: "Intro.\n" +
+				"\n" +
+				"## Step One\n" +
+				"Do A.\n" +
+				"\n" +
+				"## Step Two\n" +
+				"Do B.",
+		},
+		{
+			name: "h2 immediately after section header",
+			content: "## Description\n" +
+				"## Leading Heading\n" +
+				"\n" +
+				"Body text.\n",
+			section: "Description",
+			want: "## Leading Heading\n" +
+				"\n" +
+				"Body text.",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			sections := parseContextFile(tc.content)
+			assert.Equal(t, tc.want, sections[tc.section])
+			// The unknown heading must not have become its own section.
+			_, hasLeading := sections["Leading Heading"]
+			_, hasSome := sections["SomeHeading"]
+			_, hasStep1 := sections["Step One"]
+			_, hasStep2 := sections["Step Two"]
+			assert.False(t, hasLeading)
+			assert.False(t, hasSome)
+			assert.False(t, hasStep1)
+			assert.False(t, hasStep2)
+		})
+	}
+}
+
+func TestWriteAndReadContext_DescriptionWithH2Heading(t *testing.T) {
+	store := setupContextTest(t)
+
+	desc := "First paragraph.\n" +
+		"\n" +
+		"## Heading\n" +
+		"\n" +
+		"Second paragraph.\n" +
+		"\n" +
+		"Third paragraph."
+
+	input := map[string]string{
+		"Description": desc,
+	}
+
+	err := store.WriteContext("abcd", input)
+	require.NoError(t, err)
+
+	got, err := store.ReadContext("abcd")
+	require.NoError(t, err)
+	assert.Equal(t, desc, got["Description"])
+	// The embedded "## Heading" must not have leaked into its own section.
+	_, hasPhantom := got["Heading"]
+	assert.False(t, hasPhantom)
+}
+
+func TestParseContextFile_KnownHeaderStillSplits(t *testing.T) {
+	content := "## Description\n" +
+		"A real description.\n" +
+		"\n" +
+		"## Verify\n" +
+		"Run tests.\n"
+
+	sections := parseContextFile(content)
+	assert.Equal(t, "A real description.", sections["Description"])
+	assert.Equal(t, "Run tests.", sections["Verify"])
+}
+
+func TestParseContextFile_NotesAndActionRecognized(t *testing.T) {
+	// Both "## Notes" and "## Action" must still be treated as section
+	// boundaries: Notes is written by AppendNote, Action is legacy v4→v5
+	// compat used by mergeContext and the v5→v6 migration.
+	content := "## Action\n" +
+		"Do the old thing.\n" +
+		"\n" +
+		"## Verify\n" +
+		"Check it.\n" +
+		"\n" +
+		"## Notes\n" +
+		"### 2026-02-20T10:00:00Z\n" +
+		"Some note.\n"
+
+	sections := parseContextFile(content)
+	assert.Equal(t, "Do the old thing.", sections["Action"])
+	assert.Equal(t, "Check it.", sections["Verify"])
+	assert.Contains(t, sections["Notes"], "### 2026-02-20T10:00:00Z")
+	assert.Contains(t, sections["Notes"], "Some note.")
 }
 
 // indexOf returns the byte position of substr in s, or -1 if not found.
