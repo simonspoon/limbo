@@ -83,13 +83,20 @@ func runTree(cmd *cobra.Command, args []string) error {
 	// Print tree for each root
 	for i := range roots {
 		isLast := i == len(roots)-1
-		printTaskTree(os.Stdout, &roots[i], taskMap, "", isLast)
+		printTaskTree(os.Stdout, &roots[i], taskMap, "", isLast, false, nil)
 	}
 
 	return nil
 }
 
-func printTaskTree(w io.Writer, task *models.Task, taskMap map[string]models.Task, prefix string, isLast bool) {
+// printTaskTree renders a task subtree.
+//
+// When showBlocked is true, blocked tasks are prefixed with 🚫 before the
+// name and an indented dimmed sub-line describes the block context
+// (manual reason and/or "blocked by: <name>" per non-done blocker).
+// allTaskMap is the unfiltered task map used to resolve blocker status +
+// names; it may be nil when showBlocked is false.
+func printTaskTree(w io.Writer, task *models.Task, taskMap map[string]models.Task, prefix string, isLast bool, showBlocked bool, allTaskMap map[string]models.Task) {
 	boldWhite := color.New(color.Bold, color.FgWhite)
 	gray := color.New(color.FgHiBlack)
 	statusColor := getStatusColor(task.Status)
@@ -103,13 +110,47 @@ func printTaskTree(w io.Writer, task *models.Task, taskMap map[string]models.Tas
 		marker = "├─ "
 	}
 
-	// Format: ID  Name  [STATUS]
+	blocked := showBlocked && isTaskBlocked(task, allTaskMap)
+
+	// Format: ID  [🚫 ]Name  [STATUS]
 	_, _ = fmt.Fprint(w, prefix+marker)
 	_, _ = gray.Fprintf(w, "%s  ", task.ID)
+	if blocked {
+		_, _ = fmt.Fprint(w, "🚫 ")
+	}
 	_, _ = boldWhite.Fprint(w, task.Name)
 	_, _ = fmt.Fprint(w, "  ")
 	_, _ = statusColor.Fprintf(w, "[%s]", formatStatus(task.Status))
 	_, _ = fmt.Fprintln(w)
+
+	// Compute child indentation now so the block sub-line aligns with
+	// where children would appear.
+	var childPrefix string
+	if prefix == "" {
+		childPrefix = "  "
+	} else if isLast {
+		childPrefix = prefix + "   "
+	} else {
+		childPrefix = prefix + "│  "
+	}
+
+	// Block context sub-line(s)
+	if blocked {
+		if task.ManualBlockReason != "" {
+			_, _ = gray.Fprintf(w, "%s↳ %s\n", childPrefix, task.ManualBlockReason)
+		}
+		for _, blockerID := range task.BlockedBy {
+			blocker, ok := allTaskMap[blockerID]
+			if ok && blocker.Status == models.StatusDone {
+				continue
+			}
+			name := blockerID
+			if ok && blocker.Name != "" {
+				name = blocker.Name
+			}
+			_, _ = gray.Fprintf(w, "%s↳ blocked by: %s\n", childPrefix, name)
+		}
+	}
 
 	// Find children
 	var children []models.Task
@@ -128,15 +169,7 @@ func printTaskTree(w io.Writer, task *models.Task, taskMap map[string]models.Tas
 	// Print children recursively
 	for i := range children {
 		childIsLast := i == len(children)-1
-		var childPrefix string
-		if prefix == "" {
-			childPrefix = "  "
-		} else if isLast {
-			childPrefix = prefix + "   "
-		} else {
-			childPrefix = prefix + "│  "
-		}
-		printTaskTree(w, &children[i], taskMap, childPrefix, childIsLast)
+		printTaskTree(w, &children[i], taskMap, childPrefix, childIsLast, showBlocked, allTaskMap)
 	}
 }
 

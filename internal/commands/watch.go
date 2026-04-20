@@ -100,7 +100,14 @@ func runWatch(cmd *cobra.Command, args []string) error {
 			currTasks := toTaskMap(tasks)
 
 			if watchPretty {
-				clearAndRender(tasks, rawMode)
+				// Load unfiltered snapshot for blocked detection so blocker
+				// names resolve even when --status/--show-all would hide them.
+				allTasks, err := store.LoadAll()
+				if err != nil {
+					allTasks = tasks
+				}
+				allTaskMap := toTaskMap(allTasks)
+				clearAndRender(tasks, allTaskMap, rawMode)
 			} else {
 				if first {
 					outputSnapshot(tasks)
@@ -198,7 +205,7 @@ func outputChanges(prev, curr map[string]models.Task) {
 	}
 }
 
-func clearAndRender(tasks []models.Task, rawMode bool) {
+func clearAndRender(tasks []models.Task, allTaskMap map[string]models.Task, rawMode bool) {
 	var buf bytes.Buffer
 
 	// Clear screen using ANSI escape codes
@@ -206,9 +213,10 @@ func clearAndRender(tasks []models.Task, rawMode bool) {
 
 	// Header
 	fmt.Fprintf(&buf, "limbo watch - %s\n", time.Now().Format("15:04:05"))
-	fmt.Fprintf(&buf, "Tasks: %d todo, %d in-progress, %d done\n\n",
+	fmt.Fprintf(&buf, "Tasks: %d todo · %d in-progress · %d blocked · %d done\n\n",
 		countByStatus(tasks, models.StatusCaptured),
 		countByStatus(tasks, models.StatusInProgress),
+		countBlocked(tasks, allTaskMap),
 		countByStatus(tasks, models.StatusDone))
 
 	if len(tasks) == 0 {
@@ -231,7 +239,7 @@ func clearAndRender(tasks []models.Task, rawMode bool) {
 		// Print tree for each root
 		for i := range roots {
 			isLast := i == len(roots)-1
-			printTaskTree(&buf, &roots[i], taskMap, "", isLast)
+			printTaskTree(&buf, &roots[i], taskMap, "", isLast, true, allTaskMap)
 		}
 	}
 
@@ -287,4 +295,37 @@ func countByStatus(tasks []models.Task, status string) int {
 		}
 	}
 	return count
+}
+
+// isTaskBlocked reports whether a task is manually blocked or has any
+// non-done blocker. allTaskMap is the unfiltered task map used to resolve
+// blocker status. A blocker absent from the map is treated as done (it was
+// filtered out of view but would have been kept otherwise).
+func isTaskBlocked(task *models.Task, allTaskMap map[string]models.Task) bool {
+	if task.ManualBlockReason != "" {
+		return true
+	}
+	for _, blockerID := range task.BlockedBy {
+		blocker, ok := allTaskMap[blockerID]
+		if !ok {
+			// Unknown blocker: cannot verify done. Conservative: treat as blocked.
+			return true
+		}
+		if blocker.Status != models.StatusDone {
+			return true
+		}
+	}
+	return false
+}
+
+// countBlocked returns the number of tasks in the provided slice that are
+// currently blocked (manual or dependency).
+func countBlocked(tasks []models.Task, allTaskMap map[string]models.Task) int {
+	n := 0
+	for i := range tasks {
+		if isTaskBlocked(&tasks[i], allTaskMap) {
+			n++
+		}
+	}
+	return n
 }
