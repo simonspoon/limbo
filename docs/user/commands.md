@@ -638,7 +638,31 @@ Example events:
 
 **Output (pretty mode)**
 
-Clears the terminal screen on each tick and redraws the task hierarchy as a tree (same format as `limbo tree --pretty`). A header shows the current time and a count of tasks by status. Press `q` or `Ctrl+C` to exit.
+Clears the terminal screen on each tick and redraws the task hierarchy as a live tree. Press `q` or `Ctrl+C` to exit.
+
+The header shows the current time and a count of tasks by status, including a `blocked` bucket:
+
+```
+limbo watch - 15:04:05
+Tasks: 2 todo · 0 in-progress · 1 blocked · 0 done
+```
+
+The blocked count reflects only the tasks currently visible (respects any active `--status` filter).
+
+Blocked tasks are prefixed with `🚫` before the task name. Indented `↳` sub-lines describe the block reason:
+
+Blocked task rendering (example abbreviated — real output includes all visible tasks):
+
+```
+abcd  🚫 blocked task  [CAPTURED]
+  ↳ waiting on review
+  ↳ blocked by: dep task
+```
+
+- The first `↳` line shows the manual block reason, if one was set.
+- Each remaining `↳` line identifies a non-done dependency blocker by name. If the blocker cannot be resolved, the raw blocker ID is shown instead.
+
+Note: this blocked-visibility rendering is specific to `watch --pretty`. The `limbo tree` command does not show `🚫` prefixes or `↳` sub-lines.
 
 **Visibility**
 

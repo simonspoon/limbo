@@ -135,6 +135,8 @@ limbo watch --pretty
 
 Press `q` or `Ctrl+C` to exit.
 
+The header shows a task count by status including a `blocked` bucket (`N todo · N in-progress · N blocked · N done`). Blocked tasks are prefixed with `🚫` and followed by indented `↳` sub-lines showing the manual block reason (if set) and/or each non-done dependency blocker by name. If a blocker ID cannot be resolved in the task map (e.g., after a prune or partial import), the raw ID is shown instead of a name. This rendering is specific to `watch --pretty`; `limbo tree` does not show blocked indicators.
+
 ### Watch options
 
 ```bash

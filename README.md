@@ -171,6 +171,30 @@ JSON mode outputs events:
 - `updated` - Task modified
 - `deleted` - Task removed
 
+**Pretty mode** renders a live hierarchical tree. The header line shows a count of tasks by status, including a `blocked` bucket:
+
+```
+limbo watch - 15:04:05
+Tasks: 2 todo · 0 in-progress · 1 blocked · 0 done
+```
+
+The blocked count reflects only the tasks currently visible (respects any active `--status` filter).
+
+Blocked tasks are prefixed with `🚫` before the task name. Indented `↳` sub-lines describe why:
+
+Blocked task rendering (example abbreviated — real output includes all visible tasks):
+
+```
+abcd  🚫 blocked task  [CAPTURED]
+  ↳ waiting on review
+  ↳ blocked by: dep task
+```
+
+- The first `↳` line shows the manual block reason, if one was set.
+- Each remaining `↳` line identifies a non-done dependency blocker by name (or by raw ID if the blocker cannot be resolved).
+
+Note: blocked visibility is specific to `watch --pretty`. The `limbo tree` command does not show `🚫` prefixes or `↳` sub-lines.
+
 ## Storage
 
 limbo uses two-tier storage within the `.limbo/` directory:
