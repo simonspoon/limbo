@@ -15,13 +15,19 @@ var showPretty bool
 var showCmd = &cobra.Command{
 	Use:   "show <id>",
 	Short: "Show task details",
-	Long:  `Display detailed information about a task.`,
-	Args:  cobra.ExactArgs(1),
-	RunE:  runShow,
+	Long: `Display detailed information about a task.
+
+Output is JSON by default. Use --pretty for a human-readable format. The --json
+flag is accepted as a no-op for script compatibility (JSON is already the default).`,
+	Args: cobra.ExactArgs(1),
+	RunE: runShow,
 }
 
 func init() {
 	showCmd.Flags().BoolVar(&showPretty, "pretty", false, "Pretty print output")
+	// --json is a no-op: JSON is already the default output. Accepted so
+	// scripts that pass --json defensively do not fail with "unknown flag".
+	showCmd.Flags().Bool("json", false, "Emit JSON output (no-op; JSON is the default)")
 }
 
 type blockerInfo struct {

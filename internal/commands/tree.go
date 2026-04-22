@@ -19,14 +19,22 @@ var treeShowAll bool
 var treeCmd = &cobra.Command{
 	Use:   "tree",
 	Short: "Display tasks in a hierarchical tree view",
-	Long:  `Display all tasks in a hierarchical tree structure showing parent-child relationships.`,
-	RunE:  runTree,
+	Long: `Display all tasks in a hierarchical tree structure showing parent-child relationships.
+
+Tree defaults to a pretty, human-readable format (--pretty=true). Pass --pretty=false
+for JSON output. The --json flag is accepted as a no-op for script compatibility;
+it does NOT override the --pretty default. To force JSON, use --pretty=false.`,
+	RunE: runTree,
 }
 
 func init() {
 	// tree defaults to pretty since JSON hierarchy is awkward
 	treeCmd.Flags().BoolVar(&treePretty, "pretty", true, "Pretty print output (default true for tree)")
 	treeCmd.Flags().BoolVar(&treeShowAll, "show-all", false, "Show all tasks including completed")
+	// --json is a no-op accepted for script compatibility. Tree defaults to
+	// --pretty=true, so --json alone does NOT produce JSON; callers wanting
+	// JSON output must pass --pretty=false.
+	treeCmd.Flags().Bool("json", false, "Accepted for compatibility (no-op; use --pretty=false for JSON)")
 }
 
 func runTree(cmd *cobra.Command, args []string) error {

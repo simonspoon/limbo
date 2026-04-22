@@ -18,14 +18,20 @@ var (
 var searchCmd = &cobra.Command{
 	Use:   "search <query>",
 	Short: "Search tasks by name or description",
-	Long:  `Search tasks by matching a query string against task name and description (case-insensitive substring match).`,
-	Args:  cobra.ExactArgs(1),
-	RunE:  runSearch,
+	Long: `Search tasks by matching a query string against task name and description (case-insensitive substring match).
+
+Output is JSON by default. Use --pretty for a human-readable format. The --json
+flag is accepted as a no-op for script compatibility (JSON is already the default).`,
+	Args: cobra.ExactArgs(1),
+	RunE: runSearch,
 }
 
 func init() {
 	searchCmd.Flags().BoolVar(&searchPretty, "pretty", false, "Pretty print output")
 	searchCmd.Flags().BoolVar(&searchShowAll, "show-all", false, "Show all tasks including completed")
+	// --json is a no-op: JSON is already the default output. Accepted so
+	// scripts that pass --json defensively do not fail with "unknown flag".
+	searchCmd.Flags().Bool("json", false, "Emit JSON output (no-op; JSON is the default)")
 }
 
 func runSearch(cmd *cobra.Command, args []string) error {

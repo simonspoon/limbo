@@ -24,8 +24,11 @@ var (
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List tasks",
-	Long:  `List tasks with optional filtering by status, owner, or blocked state.`,
-	RunE:  runList,
+	Long: `List tasks with optional filtering by status, owner, or blocked state.
+
+Output is JSON by default. Use --pretty for a human-readable format. The --json
+flag is accepted as a no-op for script compatibility (JSON is already the default).`,
+	RunE: runList,
 }
 
 func init() {
@@ -36,6 +39,9 @@ func init() {
 	listCmd.Flags().BoolVar(&listBlocked, "blocked", false, "Show only blocked tasks")
 	listCmd.Flags().BoolVar(&listUnblocked, "unblocked", false, "Show only unblocked tasks")
 	listCmd.Flags().BoolVar(&listShowAll, "show-all", false, "Show all tasks including completed")
+	// --json is a no-op: JSON is already the default output. Accepted so
+	// scripts that pass --json defensively do not fail with "unknown flag".
+	listCmd.Flags().Bool("json", false, "Emit JSON output (no-op; JSON is the default)")
 }
 
 func runList(cmd *cobra.Command, args []string) error {
