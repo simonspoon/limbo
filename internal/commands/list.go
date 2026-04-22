@@ -19,12 +19,16 @@ var (
 	listBlocked   bool
 	listUnblocked bool
 	listShowAll   bool
+	listParent    string
 )
 
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List tasks",
-	Long: `List tasks with optional filtering by status, owner, or blocked state.
+	Long: `List tasks with optional filtering by status, owner, blocked state, or parent.
+
+Use --parent <id> to return only the direct children of a task. Pass --parent root
+(or --parent "") to return top-level tasks that have no parent.
 
 Output is JSON by default. Use --pretty for a human-readable format. The --json
 flag is accepted as a no-op for script compatibility (JSON is already the default).`,
@@ -39,6 +43,7 @@ func init() {
 	listCmd.Flags().BoolVar(&listBlocked, "blocked", false, "Show only blocked tasks")
 	listCmd.Flags().BoolVar(&listUnblocked, "unblocked", false, "Show only unblocked tasks")
 	listCmd.Flags().BoolVar(&listShowAll, "show-all", false, "Show all tasks including completed")
+	listCmd.Flags().StringVar(&listParent, "parent", "", "Filter to direct children of task <id>. Use 'root' or '' for top-level tasks")
 	// --json is a no-op: JSON is already the default output. Accepted so
 	// scripts that pass --json defensively do not fail with "unknown flag".
 	listCmd.Flags().Bool("json", false, "Emit JSON output (no-op; JSON is the default)")
@@ -59,7 +64,8 @@ func runList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	tasks, err = applyListFilters(tasks, store)
+	parentSet := cmd != nil && cmd.Flags().Changed("parent")
+	tasks, err = applyListFilters(tasks, store, parentSet)
 	if err != nil {
 		return err
 	}
@@ -91,7 +97,7 @@ func validateListFlags() error {
 	return nil
 }
 
-func applyListFilters(tasks []models.Task, store *storage.Storage) ([]models.Task, error) {
+func applyListFilters(tasks []models.Task, store *storage.Storage, parentSet bool) ([]models.Task, error) {
 	if listStatus != "" {
 		tasks = filterTasksByStatus(tasks, listStatus)
 	}
@@ -114,6 +120,9 @@ func applyListFilters(tasks []models.Task, store *storage.Storage) ([]models.Tas
 		if err != nil {
 			return nil, err
 		}
+	}
+	if parentSet {
+		tasks = filterByParent(tasks, listParent)
 	}
 	if !listShowAll {
 		tasks = filterCompletedTasks(tasks)
@@ -145,6 +154,25 @@ func filterUnclaimed(tasks []models.Task) []models.Task {
 	var filtered []models.Task
 	for i := range tasks {
 		if tasks[i].Owner == nil {
+			filtered = append(filtered, tasks[i])
+		}
+	}
+	return filtered
+}
+
+// filterByParent returns tasks whose parent matches the given id.
+// The sentinels "" and "root" match tasks that have no parent (top-level).
+func filterByParent(tasks []models.Task, parent string) []models.Task {
+	wantRoot := parent == "" || parent == "root"
+	var filtered []models.Task
+	for i := range tasks {
+		if wantRoot {
+			if tasks[i].Parent == nil {
+				filtered = append(filtered, tasks[i])
+			}
+			continue
+		}
+		if tasks[i].Parent != nil && *tasks[i].Parent == parent {
 			filtered = append(filtered, tasks[i])
 		}
 	}

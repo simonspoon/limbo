@@ -207,6 +207,122 @@ func TestListPrettyWithAllStatuses(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestListFilterByParent(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	// Two top-level tasks; one has two children
+	parentID := createTestTask(t, store, "Parent Task", models.StatusInProgress, nil)
+	otherTopID := createTestTask(t, store, "Other Top", models.StatusCaptured, nil)
+	childAID := createTestTask(t, store, "Child A", models.StatusCaptured, &parentID)
+	childBID := createTestTask(t, store, "Child B", models.StatusReady, &parentID)
+	// Unrelated grandchild — should NOT appear when filtering by parentID (direct only)
+	grandchildID := createTestTask(t, store, "Grandchild", models.StatusCaptured, &childAID)
+
+	tasks, err := store.LoadAll()
+	require.NoError(t, err)
+
+	// --parent <parentID>: direct children only
+	got := filterByParent(tasks, parentID)
+	ids := map[string]bool{}
+	for _, tk := range got {
+		ids[tk.ID] = true
+	}
+	assert.True(t, ids[childAID], "child A should be present")
+	assert.True(t, ids[childBID], "child B should be present")
+	assert.False(t, ids[grandchildID], "grandchild should not be present (only direct)")
+	assert.False(t, ids[parentID], "parent itself should not be present")
+	assert.False(t, ids[otherTopID], "unrelated top-level should not be present")
+	assert.Len(t, got, 2)
+
+	// --parent root: top-level tasks only
+	root := filterByParent(tasks, "root")
+	rootIDs := map[string]bool{}
+	for _, tk := range root {
+		rootIDs[tk.ID] = true
+	}
+	assert.True(t, rootIDs[parentID])
+	assert.True(t, rootIDs[otherTopID])
+	assert.False(t, rootIDs[childAID])
+	assert.False(t, rootIDs[grandchildID])
+	assert.Len(t, root, 2)
+
+	// --parent "" matches the same set as "root"
+	empty := filterByParent(tasks, "")
+	assert.Len(t, empty, 2)
+	for _, tk := range empty {
+		assert.Nil(t, tk.Parent)
+	}
+
+	// No match for unknown parent id
+	none := filterByParent(tasks, "does-not-exist")
+	assert.Empty(t, none)
+}
+
+func TestListFilterByParentCombinesWithStatus(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	parentID := createTestTask(t, store, "Parent", models.StatusInProgress, nil)
+	capturedChildID := createTestTask(t, store, "Captured Child", models.StatusCaptured, &parentID)
+	_ = createTestTask(t, store, "Ready Child", models.StatusReady, &parentID)
+
+	listStatus = models.StatusCaptured
+	listPretty = false
+	listOwner = ""
+	listUnclaimed = false
+	listBlocked = false
+	listUnblocked = false
+	listShowAll = false
+	listParent = parentID
+
+	tasks, err := store.LoadAll()
+	require.NoError(t, err)
+
+	filtered, err := applyListFilters(tasks, store, true)
+	require.NoError(t, err)
+	assert.Len(t, filtered, 1)
+	assert.Equal(t, capturedChildID, filtered[0].ID)
+
+	// Reset
+	listStatus = ""
+	listParent = ""
+}
+
+func TestListParentFlagUnsetShowsAll(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	topID := createTestTask(t, store, "Top", models.StatusCaptured, nil)
+	_ = createTestTask(t, store, "Child", models.StatusCaptured, &topID)
+
+	listStatus = ""
+	listPretty = false
+	listOwner = ""
+	listUnclaimed = false
+	listBlocked = false
+	listUnblocked = false
+	listShowAll = false
+	listParent = ""
+
+	tasks, err := store.LoadAll()
+	require.NoError(t, err)
+
+	// parentSet=false: do not apply filter even though listParent is ""
+	filtered, err := applyListFilters(tasks, store, false)
+	require.NoError(t, err)
+	assert.Len(t, filtered, 2)
+}
+
 func TestListInvalidStatusMessage(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
