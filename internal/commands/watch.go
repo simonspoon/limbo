@@ -299,8 +299,8 @@ func countByStatus(tasks []models.Task, status string) int {
 
 // isTaskBlocked reports whether a task is manually blocked or has any
 // non-done blocker. allTaskMap is the unfiltered task map used to resolve
-// blocker status. A blocker absent from the map is treated as done (it was
-// filtered out of view but would have been kept otherwise).
+// blocker status. A blocker absent from the map is treated conservatively
+// as blocked (unknown → blocked), since its status cannot be verified.
 func isTaskBlocked(task *models.Task, allTaskMap map[string]models.Task) bool {
 	if task.ManualBlockReason != "" {
 		return true
