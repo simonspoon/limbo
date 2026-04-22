@@ -10,6 +10,7 @@ import (
 )
 
 var (
+	addName               string
 	addDescription        string
 	addParent             string
 	addPretty             bool
@@ -26,14 +27,15 @@ var (
 )
 
 var addCmd = &cobra.Command{
-	Use:   "add <name>",
+	Use:   "add [name]",
 	Short: "Add a new task",
-	Long:  `Add a new task with the specified name and optional description.`,
-	Args:  cobra.ExactArgs(1),
+	Long:  `Add a new task with the specified name and optional description. Name may be given as a positional argument or via --name.`,
+	Args:  cobra.MaximumNArgs(1),
 	RunE:  runAdd,
 }
 
 func init() {
+	addCmd.Flags().StringVar(&addName, "name", "", "Task name (alternative to positional arg; positional wins if both given)")
 	addCmd.Flags().StringVarP(&addDescription, "description", "d", "", "Task description")
 	addCmd.Flags().StringVar(&addParent, "parent", "", "Parent task ID")
 	addCmd.Flags().BoolVar(&addPretty, "pretty", false, "Pretty print output")
@@ -51,8 +53,16 @@ func init() {
 }
 
 func runAdd(cmd *cobra.Command, args []string) error {
-	// Get task name
-	name := args[0]
+	// Resolve task name: positional wins over --name
+	var name string
+	if len(args) > 0 {
+		name = args[0]
+	} else {
+		name = addName
+	}
+	if name == "" {
+		return fmt.Errorf("task name required: provide positional arg or --name")
+	}
 
 	// Load storage
 	store, err := getStorage()

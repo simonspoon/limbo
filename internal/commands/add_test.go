@@ -35,6 +35,7 @@ func setupTestEnv(t *testing.T) (string, func()) {
 }
 
 func resetAddFlags() {
+	addName = ""
 	addDescription = ""
 	addParent = ""
 	addPretty = false
@@ -333,6 +334,58 @@ func TestAddCommand_ApproachWinsOverAction(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, tasks, 1)
 	assert.Equal(t, "approach wins", tasks[0].Approach)
+}
+
+func TestAddCommand_NameFlag(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	resetAddFlags()
+	addName = "Flag-Only Task"
+
+	// No positional arg; name comes from --name
+	err := runAdd(nil, []string{})
+	require.NoError(t, err)
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	tasks, err := store.LoadAll()
+	require.NoError(t, err)
+	assert.Len(t, tasks, 1)
+	assert.Equal(t, "Flag-Only Task", tasks[0].Name)
+}
+
+func TestAddCommand_PositionalWinsOverNameFlag(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	resetAddFlags()
+	addName = "flag loses"
+
+	// Both positional and --name given; positional wins
+	err := runAdd(nil, []string{"positional wins"})
+	require.NoError(t, err)
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	tasks, err := store.LoadAll()
+	require.NoError(t, err)
+	assert.Len(t, tasks, 1)
+	assert.Equal(t, "positional wins", tasks[0].Name)
+}
+
+func TestAddCommand_NoNameError(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	resetAddFlags()
+
+	// Neither positional nor --name; should error
+	err := runAdd(nil, []string{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "task name required")
 }
 
 func TestAddCommand_NewMetadataFields(t *testing.T) {
