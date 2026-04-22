@@ -686,6 +686,59 @@ func TestIsBlocked(t *testing.T) {
 	isBlocked, err = store.IsBlocked(ghostBlocked)
 	require.NoError(t, err)
 	assert.False(t, isBlocked)
+
+	// Manual-only block: no deps, just ManualBlockReason set.
+	manualOnly := &models.Task{
+		ID:                "aaae",
+		Name:              "Manual only",
+		Status:            models.StatusCaptured,
+		ManualBlockReason: "waiting on external answer",
+		Created:           now,
+		Updated:           now,
+	}
+	require.NoError(t, store.SaveTask(manualOnly))
+	isBlocked, err = store.IsBlocked(manualOnly)
+	require.NoError(t, err)
+	assert.True(t, isBlocked, "manual-only block should report blocked")
+
+	// Combined: manual reason set AND dep not done. Blocker "aaaa" is done
+	// from the earlier mutation; add a fresh non-done predecessor to be
+	// explicit about the combined case.
+	freshBlocker := &models.Task{
+		ID:      "aaaf",
+		Name:    "Fresh blocker",
+		Status:  models.StatusCaptured,
+		Created: now,
+		Updated: now,
+	}
+	require.NoError(t, store.SaveTask(freshBlocker))
+	combined := &models.Task{
+		ID:                "aaag",
+		Name:              "Combined block",
+		Status:            models.StatusCaptured,
+		ManualBlockReason: "also manually blocked",
+		BlockedBy:         []string{"aaaf"},
+		Created:           now,
+		Updated:           now,
+	}
+	require.NoError(t, store.SaveTask(combined))
+	isBlocked, err = store.IsBlocked(combined)
+	require.NoError(t, err)
+	assert.True(t, isBlocked, "combined manual+dep block should report blocked")
+
+	// Clearing ManualBlockReason on combined leaves dep-only path active.
+	combined.ManualBlockReason = ""
+	require.NoError(t, store.SaveTask(combined))
+	isBlocked, err = store.IsBlocked(combined)
+	require.NoError(t, err)
+	assert.True(t, isBlocked, "dep-only path should still block after clearing manual reason")
+
+	// Resolving the fresh blocker lifts the block entirely.
+	freshBlocker.Status = models.StatusDone
+	require.NoError(t, store.SaveTask(freshBlocker))
+	isBlocked, err = store.IsBlocked(combined)
+	require.NoError(t, err)
+	assert.False(t, isBlocked, "task with empty manual reason and done blocker should be unblocked")
 }
 
 func TestWouldCreateCycle(t *testing.T) {

@@ -781,8 +781,16 @@ func (s *Storage) GetRootDir() string {
 	return s.rootDir
 }
 
-// IsBlocked returns true if any task in BlockedBy is not done
+// IsBlocked returns true when a task has a manual block reason or when any
+// BlockedBy predecessor is not done. Manual and dependency blocks are
+// orthogonal overlays — either one alone makes a task blocked. A BlockedBy
+// entry referring to a missing task is treated as resolved (blocker gone =
+// unblocked), matching the semantics relied on by FindNextLeaf and the
+// --blocked / --unblocked list filters.
 func (s *Storage) IsBlocked(task *models.Task) (bool, error) {
+	if task.ManualBlockReason != "" {
+		return true, nil
+	}
 	if len(task.BlockedBy) == 0 {
 		return false, nil
 	}
