@@ -42,6 +42,11 @@ func runTree(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Snapshot unfiltered task map for blocked detection so blocker names
+	// resolve even when filterCompletedTasks would hide done blockers.
+	// Mirrors watch.go loading an unfiltered map alongside the render slice.
+	allTaskMap := toTaskMap(tasks)
+
 	if !treeShowAll {
 		tasks = filterCompletedTasks(tasks)
 	}
@@ -80,10 +85,12 @@ func runTree(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Print tree for each root
+	// Print tree for each root. Match watch --pretty blocked rendering:
+	// 🚫 prefix on blocked tasks + dimmed ↳ sub-lines for reason and
+	// non-done blocker names.
 	for i := range roots {
 		isLast := i == len(roots)-1
-		printTaskTree(os.Stdout, &roots[i], taskMap, "", isLast, false, nil)
+		printTaskTree(os.Stdout, &roots[i], taskMap, "", isLast, true, allTaskMap)
 	}
 
 	return nil

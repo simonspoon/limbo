@@ -1,9 +1,11 @@
 package commands
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/simonspoon/limbo/internal/models"
 	"github.com/simonspoon/limbo/internal/storage"
 	"github.com/stretchr/testify/assert"
@@ -244,6 +246,162 @@ func TestGetStatusColor_AllStatuses(t *testing.T) {
 		c := getStatusColor(s)
 		assert.NotNil(t, c, "getStatusColor(%q) should return non-nil", s)
 	}
+}
+
+// TestPrintTaskTree_Subtree_BlockedChild verifies tree rendering over a
+// parent with a mix of blocked and non-blocked children. Exercises the
+// same showBlocked=true + allTaskMap wiring that runTree now plumbs,
+// matching limbo watch --pretty behavior.
+func TestPrintTaskTree_Subtree_BlockedChild(t *testing.T) {
+	prev := color.NoColor
+	color.NoColor = true
+	t.Cleanup(func() { color.NoColor = prev })
+
+	now := time.Now()
+	rootID := "aaaa"
+	root := models.Task{
+		ID:      rootID,
+		Name:    "Root Task",
+		Status:  models.StatusCaptured,
+		Created: now,
+		Updated: now,
+	}
+
+	// Manual-blocked child (reason set).
+	manualID := "aaab"
+	manual := models.Task{
+		ID:                manualID,
+		Name:              "Manual Blocked Child",
+		Parent:            &rootID,
+		Status:            models.StatusInProgress,
+		ManualBlockReason: "awaiting design review",
+		Created:           now.Add(1 * time.Millisecond),
+		Updated:           now.Add(1 * time.Millisecond),
+	}
+
+	// Dep-blocked child (waits on non-done blocker).
+	blockerID := "bbbb"
+	blocker := models.Task{
+		ID:      blockerID,
+		Name:    "Upstream Job",
+		Status:  models.StatusInProgress,
+		Created: now,
+		Updated: now,
+	}
+	depID := "aaac"
+	dep := models.Task{
+		ID:        depID,
+		Name:      "Dep Blocked Child",
+		Parent:    &rootID,
+		Status:    models.StatusCaptured,
+		BlockedBy: []string{blockerID},
+		Created:   now.Add(2 * time.Millisecond),
+		Updated:   now.Add(2 * time.Millisecond),
+	}
+
+	// Plain (unblocked) child — sibling control.
+	plainID := "aaad"
+	plain := models.Task{
+		ID:      plainID,
+		Name:    "Plain Child",
+		Parent:  &rootID,
+		Status:  models.StatusCaptured,
+		Created: now.Add(3 * time.Millisecond),
+		Updated: now.Add(3 * time.Millisecond),
+	}
+
+	taskMap := map[string]models.Task{
+		rootID:   root,
+		manualID: manual,
+		depID:    dep,
+		plainID:  plain,
+	}
+	// allTaskMap includes the blocker task so its name resolves even
+	// when it would otherwise be outside the rendered slice.
+	allTaskMap := map[string]models.Task{
+		rootID:    root,
+		manualID:  manual,
+		depID:     dep,
+		plainID:   plain,
+		blockerID: blocker,
+	}
+
+	var buf bytes.Buffer
+	r := root
+	printTaskTree(&buf, &r, taskMap, "", true, true, allTaskMap)
+	out := buf.String()
+
+	// Blocked children carry the 🚫 prefix + dimmed sub-lines.
+	assert.Contains(t, out, "🚫 Manual Blocked Child")
+	assert.Contains(t, out, "↳ awaiting design review")
+	assert.Contains(t, out, "🚫 Dep Blocked Child")
+	assert.Contains(t, out, "↳ blocked by: Upstream Job")
+
+	// Root and plain sibling must not have the blocked indicator.
+	assert.NotContains(t, out, "🚫 Root Task")
+	assert.NotContains(t, out, "🚫 Plain Child")
+}
+
+// TestPrintTaskTree_Subtree_ShowBlockedFalse verifies the pre-fix
+// behavior: when showBlocked=false the blocked indicator is suppressed
+// even inside a subtree. Guards against regressions that would leak 🚫
+// into callers that opt out.
+func TestPrintTaskTree_Subtree_ShowBlockedFalse(t *testing.T) {
+	prev := color.NoColor
+	color.NoColor = true
+	t.Cleanup(func() { color.NoColor = prev })
+
+	now := time.Now()
+	rootID := "aaaa"
+	root := models.Task{ID: rootID, Name: "Root", Status: models.StatusCaptured, Created: now, Updated: now}
+	childID := "aaab"
+	child := models.Task{
+		ID:                childID,
+		Name:              "Blocked Child",
+		Parent:            &rootID,
+		Status:            models.StatusInProgress,
+		ManualBlockReason: "halt",
+		Created:           now.Add(time.Millisecond),
+		Updated:           now.Add(time.Millisecond),
+	}
+	taskMap := map[string]models.Task{rootID: root, childID: child}
+
+	var buf bytes.Buffer
+	r := root
+	printTaskTree(&buf, &r, taskMap, "", true, false, nil)
+	out := buf.String()
+
+	assert.NotContains(t, out, "🚫")
+	assert.NotContains(t, out, "↳")
+}
+
+// TestTreeCommand_BlockedSubtree exercises the full runTree path with
+// a blocked child in the hierarchy, ensuring the pretty-tree wiring
+// (showBlocked=true + unfiltered allTaskMap) survives end-to-end.
+func TestTreeCommand_BlockedSubtree(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := storage.NewStorage()
+	require.NoError(t, err)
+
+	now := time.Now()
+	rootID := "aaaa"
+	require.NoError(t, store.SaveTask(&models.Task{
+		ID: rootID, Name: "Root", Status: models.StatusCaptured,
+		Created: now, Updated: now,
+	}))
+	require.NoError(t, store.SaveTask(&models.Task{
+		ID: "aaab", Name: "Blocked Child", Parent: &rootID,
+		Status: models.StatusInProgress, ManualBlockReason: "waiting",
+		Created: now.Add(time.Millisecond), Updated: now.Add(time.Millisecond),
+	}))
+
+	treePretty = true
+	treeShowAll = false
+
+	// runTree should not error with a blocked child in the hierarchy.
+	require.NoError(t, runTree(nil, []string{}))
 }
 
 func TestTreeCommand_AllStatuses(t *testing.T) {
