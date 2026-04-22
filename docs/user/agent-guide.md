@@ -68,7 +68,11 @@ limbo list --unclaimed            # tasks with no owner
 limbo list --status in-progress   # tasks currently being worked on
 limbo list --blocked              # tasks waiting on dependencies
 limbo list --unblocked            # tasks ready to start
+limbo list --parent abcd          # direct children of abcd
+limbo list --parent root          # top-level tasks (no parent)
 ```
+
+`--parent` returns only direct children — not the full subtree — and combines with the other filters. Use `--parent root` (or `--parent ""`) to restrict to top-level tasks without walking the full list client-side.
 
 ## Progressive Decomposition
 
@@ -135,7 +139,7 @@ limbo watch --pretty
 
 Press `q` or `Ctrl+C` to exit.
 
-The header shows a task count by status including a `blocked` bucket (`N todo · N in-progress · N blocked · N done`). Blocked tasks are prefixed with `🚫` and followed by indented `↳` sub-lines showing the manual block reason (if set) and/or each non-done dependency blocker by name. If a blocker ID cannot be resolved in the task map (e.g., after a prune or partial import), the raw ID is shown instead of a name. This rendering is specific to `watch --pretty`; `limbo tree` does not show blocked indicators.
+The header shows a task count by status including a `blocked` bucket (`N todo · N in-progress · N blocked · N done`). Blocked tasks are prefixed with `🚫` and followed by indented `↳` sub-lines showing the manual block reason (if set) and/or each non-done dependency blocker by name. If a blocker ID cannot be resolved in the task map (e.g., after a prune or partial import), the raw ID is shown instead of a name. `limbo tree` uses the same rendering.
 
 ### Watch options
 

@@ -65,7 +65,7 @@ limbo watch --pretty
 | Command | Description |
 |---------|-------------|
 | `init` | Initialize limbo in the current directory |
-| `add <name>` | Add a new task (`--approach`, `--verify`, `--result`, `--parent`, `--description`/`-d`, plus lifecycle fields) |
+| `add [name]` | Add a new task; name may be positional or `--name` (`--approach`, `--verify`, `--result`, `--parent`, `--description`/`-d`, plus lifecycle fields) |
 | `edit <id>` | Edit a task's fields (`--name`, `--description`/`-d`, `--approach`, `--verify`, `--result`, plus lifecycle fields) |
 | `list` | List all tasks |
 | `tree` | Display tasks in a tree structure (`--show-all`) |
@@ -104,6 +104,7 @@ The `list` command supports filtering:
 - `--owner <name>` - Filter by owner
 - `--unclaimed` - Show only unowned tasks
 - `--blocked` / `--unblocked` - Filter by blocked state
+- `--parent <id>` - Direct children of `<id>` (use `root` for top-level)
 - `--show-all` - Show all tasks including completed
 
 ## Usage with AI Agents
@@ -193,7 +194,7 @@ abcd  🚫 blocked task  [CAPTURED]
 - The first `↳` line shows the manual block reason, if one was set.
 - Each remaining `↳` line identifies a non-done dependency blocker by name (or by raw ID if the blocker cannot be resolved).
 
-Note: blocked visibility is specific to `watch --pretty`. The `limbo tree` command does not show `🚫` prefixes or `↳` sub-lines.
+`limbo tree` uses the same `🚫`/`↳` rendering.
 
 ## Storage
 
@@ -204,6 +205,8 @@ limbo uses two-tier storage within the `.limbo/` directory:
 - **`archive.json`** — archived tasks (complete data, created by `limbo prune`)
 
 The storage system walks up directories to find the `.limbo/` folder (similar to how git finds `.git/`). The split is transparent — commands like `show` and `edit` merge both tiers automatically.
+
+If the resolved store is an ancestor of the current directory **and** equals `$HOME`, limbo prints a one-shot warning on stderr to surface accidental use of the home-directory store. To disable the parent-directory search entirely, pass `--no-climb` (persistent flag on all commands) or set `LIMBO_NO_CLIMB=1`.
 
 ## Contributing
 

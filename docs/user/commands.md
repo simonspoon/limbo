@@ -11,6 +11,11 @@ These flags are available on every command:
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--pretty` | `false` | Human-readable output (default varies per command) |
+| `--no-climb` | `false` | Do not search parent directories for `.limbo/`. Equivalent to setting `LIMBO_NO_CLIMB=1`. |
+
+## Store Location
+
+By default, limbo walks up from the current working directory to find the nearest `.limbo/` folder (similar to how git finds `.git/`). If the resolved store root is an ancestor of cwd **and** equals `$HOME`, limbo prints a one-shot warning to stderr to surface accidental use of the home-directory store. Run `limbo init` in the project root, or pass `--no-climb` / set `LIMBO_NO_CLIMB=1` to disable the parent-directory search entirely.
 
 ---
 
@@ -46,20 +51,22 @@ limbo init [flags]
 
 ## Task Management
 
-### `limbo add <name>`
+### `limbo add [name]`
 
-Add a new task with the given name. New tasks start with status `captured`.
+Add a new task. The name can be given as a positional argument or via `--name`. If both are given, the positional argument wins. If neither is given, the command errors. New tasks start with status `captured`.
 
 **Usage**
 
 ```
-limbo add <name> [flags]
+limbo add [name] [flags]
+limbo add --name "My task" [flags]
 ```
 
 **Flags**
 
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
+| `--name` | | `""` | Task name (alternative to positional arg; positional wins if both given) |
 | `--approach` | | `""` | Chosen solution path — what to do and why |
 | `--action` | | `""` | Hidden alias for `--approach` (backward compat) |
 | `--verify` | | `""` | How to confirm the work succeeded |
@@ -84,6 +91,7 @@ abcd
 
 **Constraints and errors**
 
+- A task name is required — supply it positionally or via `--name`.
 - `--parent` must refer to an existing task.
 - Cannot add a child to a task with status `done`.
 
@@ -304,6 +312,7 @@ limbo search <query> [flags]
 |------|---------|-------------|
 | `--show-all` | `false` | Show all tasks including completed |
 | `--pretty` | `false` | Human-readable output |
+| `--json` | `false` | No-op; accepted for script compatibility (JSON is the default) |
 
 **Output (JSON)**
 
@@ -336,8 +345,10 @@ limbo list [flags]
 | `--unclaimed` | | `false` | Show only tasks with no owner |
 | `--blocked` | | `false` | Show only blocked tasks |
 | `--unblocked` | | `false` | Show only unblocked tasks |
+| `--parent` | | `""` | Filter to direct children of the given task ID. Use `root` (or `""`) to return top-level tasks. |
 | `--show-all` | | `false` | Show all tasks, including completed |
 | `--pretty` | | `false` | Human-readable output grouped by status |
+| `--json` | | `false` | No-op; accepted for script compatibility (JSON is the default) |
 
 **Output (JSON)**
 
@@ -347,6 +358,11 @@ Returns a JSON array of task objects, sorted by creation time.
 
 - `--owner` and `--unclaimed` cannot be used together.
 - `--blocked` and `--unblocked` cannot be used together.
+
+**Notes**
+
+- `--parent` returns only direct children, not the full subtree.
+- Combines with `--status`, `--owner`, `--blocked`/`--unblocked`, and `--show-all`.
 
 **Visibility**
 
@@ -368,12 +384,13 @@ limbo tree [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--pretty` | `true` | Human-readable tree output (default is `true` for this command) |
+| `--pretty` | `true` | Human-readable tree output (default is `true` for this command). Pass `--pretty=false` to emit JSON. |
 | `--show-all` | `false` | Show all tasks, including completed |
+| `--json` | `false` | No-op; accepted for script compatibility. Unlike other read commands, this does **not** override the `--pretty=true` default — use `--pretty=false` to force JSON. |
 
 **Output**
 
-Pretty mode (default): renders an indented tree with status labels (`[CAPTURED]`, `[REFINED]`, `[PLANNED]`, `[READY]`, `[IN-PROG]`, `[REVIEW]`, `[DONE]`), using colors. JSON mode: returns a flat array of task objects.
+Pretty mode (default): renders an indented tree with status labels (`[CAPTURED]`, `[REFINED]`, `[PLANNED]`, `[READY]`, `[IN-PROG]`, `[REVIEW]`, `[DONE]`), using colors. Blocked tasks are prefixed with `🚫` followed by indented `↳` sub-lines showing the manual block reason (if set) and each non-done dependency blocker (matches `watch --pretty` rendering). JSON mode (`--pretty=false`): returns a flat array of task objects.
 
 **Visibility**
 
@@ -396,6 +413,7 @@ limbo show <id> [flags]
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--pretty` | `false` | Human-readable output including notes |
+| `--json` | `false` | No-op; accepted for script compatibility (JSON is the default) |
 
 **Output (JSON)**
 
@@ -666,7 +684,7 @@ abcd  🚫 blocked task  [CAPTURED]
 - The first `↳` line shows the manual block reason, if one was set.
 - Each remaining `↳` line identifies a non-done dependency blocker by name. If the blocker cannot be resolved, the raw blocker ID is shown instead.
 
-Note: this blocked-visibility rendering is specific to `watch --pretty`. The `limbo tree` command does not show `🚫` prefixes or `↳` sub-lines.
+The same `🚫` prefix and `↳` sub-line rendering is used by `limbo tree`.
 
 **Visibility**
 

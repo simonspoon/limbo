@@ -28,6 +28,8 @@ limbo init
 
 limbo's storage walks up directories to find `.limbo/` — the same way git finds `.git/`. This means you can run limbo commands from any subdirectory of your project and it will find the right task file. Run `limbo init` from the project root so all subdirectories can discover it.
 
+If the resolved store happens to be your home directory (`$HOME/.limbo/`), limbo prints a one-shot warning on stderr so a missing local `.limbo/` doesn't silently contaminate a home-dir store. Pass `--no-climb` (or set `LIMBO_NO_CLIMB=1`) to disable parent-directory search entirely.
+
 ## Basic Task Lifecycle
 
 limbo uses a 7-stage lifecycle: `captured → refined → planned → ready → in-progress → in-review → done`. Each forward transition enforces required fields (gates).
