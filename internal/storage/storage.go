@@ -51,17 +51,39 @@ func NewStorageAt(dir string) *Storage {
 	return &Storage{rootDir: dir}
 }
 
-// findProjectRoot searches for the .limbo directory in current or parent directories
+// NoClimbEnv is the environment variable that disables parent-directory
+// traversal when resolving the .limbo project root. When set to a truthy
+// value (1/true/yes, case-insensitive), findProjectRoot only checks the
+// current working directory.
+const NoClimbEnv = "LIMBO_NO_CLIMB"
+
+// isNoClimb reports whether LIMBO_NO_CLIMB is set to a truthy value.
+func isNoClimb() bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(NoClimbEnv))) {
+	case "1", "true", "yes", "on":
+		return true
+	}
+	return false
+}
+
+// findProjectRoot searches for the .limbo directory in current or parent directories.
+// If LIMBO_NO_CLIMB is truthy, only the current working directory is checked.
 func findProjectRoot() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
 
+	noClimb := isNoClimb()
+
 	for {
 		limboPath := filepath.Join(dir, LimboDir)
 		if info, err := os.Stat(limboPath); err == nil && info.IsDir() {
 			return dir, nil
+		}
+
+		if noClimb {
+			return "", ErrNotInProject
 		}
 
 		parent := filepath.Dir(dir)

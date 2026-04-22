@@ -1224,3 +1224,75 @@ func TestGenerateTaskID_ArchiveCollision(t *testing.T) {
 		require.NoError(t, store.SaveTask(task))
 	}
 }
+
+// TestFindProjectRootNoClimbEnvDisablesParentSearch verifies that when
+// LIMBO_NO_CLIMB is set, findProjectRoot only checks cwd and returns
+// ErrNotInProject for a subdirectory even if a parent has .limbo.
+func TestFindProjectRootNoClimbEnvDisablesParentSearch(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-noclimb-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	tmpDir, err = filepath.EvalSymlinks(tmpDir)
+	require.NoError(t, err)
+
+	// Parent has .limbo; child does not.
+	parentStore := NewStorageAt(tmpDir)
+	require.NoError(t, parentStore.Init())
+
+	childDir := filepath.Join(tmpDir, "child")
+	require.NoError(t, os.MkdirAll(childDir, 0755))
+
+	origDir, err := os.Getwd()
+	require.NoError(t, err)
+	require.NoError(t, os.Chdir(childDir))
+	defer os.Chdir(origDir)
+
+	// With LIMBO_NO_CLIMB set, expect ErrNotInProject.
+	t.Setenv(NoClimbEnv, "1")
+	_, err = NewStorage()
+	assert.Equal(t, ErrNotInProject, err)
+}
+
+// TestFindProjectRootNoClimbEnvAllowsCwdMatch verifies that when
+// LIMBO_NO_CLIMB is set AND cwd itself has .limbo, resolution succeeds.
+func TestFindProjectRootNoClimbEnvAllowsCwdMatch(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "limbo-noclimb-cwd-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	tmpDir, err = filepath.EvalSymlinks(tmpDir)
+	require.NoError(t, err)
+
+	store := NewStorageAt(tmpDir)
+	require.NoError(t, store.Init())
+
+	origDir, err := os.Getwd()
+	require.NoError(t, err)
+	require.NoError(t, os.Chdir(tmpDir))
+	defer os.Chdir(origDir)
+
+	t.Setenv(NoClimbEnv, "1")
+	newStore, err := NewStorage()
+	require.NoError(t, err)
+	assert.Equal(t, tmpDir, newStore.GetRootDir())
+}
+
+// TestIsNoClimbTruthyValues verifies truthy-value parsing.
+func TestIsNoClimbTruthyValues(t *testing.T) {
+	truthy := []string{"1", "true", "TRUE", "True", "yes", "YES", "on", "ON", " 1 "}
+	for _, v := range truthy {
+		t.Run("truthy_"+v, func(t *testing.T) {
+			t.Setenv(NoClimbEnv, v)
+			assert.True(t, isNoClimb(), "expected %q to be truthy", v)
+		})
+	}
+
+	falsy := []string{"", "0", "false", "no", "off", "random"}
+	for _, v := range falsy {
+		t.Run("falsy_"+v, func(t *testing.T) {
+			t.Setenv(NoClimbEnv, v)
+			assert.False(t, isNoClimb(), "expected %q to be falsy", v)
+		})
+	}
+}
