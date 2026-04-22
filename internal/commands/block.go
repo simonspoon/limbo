@@ -18,11 +18,24 @@ var (
 )
 
 var blockCmd = &cobra.Command{
-	Use:   "block <id> [blocked-id]",
+	Use:   "block <predecessor-id> [successor-id]",
 	Short: "Block a task (manual or dependency)",
-	Long:  `With one arg + --reason: manually block a task. With two args: add a dependency.`,
-	Args:  cobra.RangeArgs(1, 2),
-	RunE:  runBlock,
+	Long: `Block a task. Two modes — argument order matters.
+
+Dependency block (two args):
+    limbo block <predecessor-id> <successor-id>
+
+  Predecessor must complete before successor can start; successor gains
+  predecessor in its blockedBy list. Example: "limbo block A B" means
+  A blocks B — A must complete before B can start.
+
+Manual block (one arg + --reason):
+    limbo block <id> --reason "..."
+
+  Manually block a task. Current stage is saved and status transitions
+  are rejected until unblocked.`,
+	Args: cobra.RangeArgs(1, 2),
+	RunE: runBlock,
 }
 
 func init() {

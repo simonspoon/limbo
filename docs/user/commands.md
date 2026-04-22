@@ -437,12 +437,14 @@ The `blockers` field resolves each ID in `blockedBy` to `{id, name, status}`. Th
 
 Two modes: **dependency block** (2 args) and **manual block** (1 arg).
 
-**Dependency block: `limbo block <blocker-id> <blocked-id>`**
+**Dependency block: `limbo block <predecessor-id> <successor-id>`**
 
-Add a dependency: `<blocked-id>` will wait for `<blocker-id>` to be `done` before it can be started.
+Add a dependency: predecessor must complete before successor can start. Successor gains the predecessor in its `blockedBy` list.
+
+Example: `limbo block A B` means **A blocks B** — A must complete before B can start.
 
 ```
-limbo block <blocker-id> <blocked-id> [flags]
+limbo block <predecessor-id> <successor-id> [flags]
 ```
 
 **Manual block: `limbo block <id> --reason "..."`**
@@ -470,14 +472,16 @@ limbo block <id> --reason "waiting on design review" [flags]
 
 ### `limbo unblock`
 
-Two modes: **remove dependency** (2 args) and **remove manual block** (1 arg).
+Two modes: **remove dependency** (2 args) and **remove manual block** (1 arg). Argument order mirrors `limbo block`.
 
-**Remove dependency: `limbo unblock <blocker-id> <blocked-id>`**
+**Remove dependency: `limbo unblock <predecessor-id> <successor-id>`**
 
-Remove `<blocker-id>` from `<blocked-id>`'s `blockedBy` list.
+Remove predecessor from successor's `blockedBy` list.
+
+Example: `limbo unblock A B` removes the A-blocks-B edge.
 
 ```
-limbo unblock <blocker-id> <blocked-id> [flags]
+limbo unblock <predecessor-id> <successor-id> [flags]
 ```
 
 **Remove manual block: `limbo unblock <id>`**

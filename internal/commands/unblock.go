@@ -17,11 +17,23 @@ var (
 )
 
 var unblockCmd = &cobra.Command{
-	Use:   "unblock <id> [blocked-id]",
+	Use:   "unblock <predecessor-id> [successor-id]",
 	Short: "Unblock a task (manual or dependency)",
-	Long:  `With one arg: remove manual block and restore stage. With two args: remove dependency.`,
-	Args:  cobra.RangeArgs(1, 2),
-	RunE:  runUnblock,
+	Long: `Unblock a task. Two modes — argument order mirrors "limbo block".
+
+Remove dependency (two args):
+    limbo unblock <predecessor-id> <successor-id>
+
+  Remove predecessor from successor's blockedBy list. Example:
+  "limbo unblock A B" removes the A-blocks-B edge (A was the predecessor
+  that had to complete before B).
+
+Remove manual block (one arg):
+    limbo unblock <id>
+
+  Remove manual block and restore the task to its previous stage.`,
+	Args: cobra.RangeArgs(1, 2),
+	RunE: runUnblock,
 }
 
 func init() {
