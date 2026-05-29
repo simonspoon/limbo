@@ -70,6 +70,10 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if err := checkIfRevision(cmd, store); err != nil {
+		return err
+	}
+
 	// Validate parent if specified
 	var parent *string
 	if addParent != "" {

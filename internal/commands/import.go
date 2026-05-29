@@ -6,9 +6,18 @@ import (
 	"os"
 
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
+	"github.com/simonspoon/limbo/internal/store/taskstore"
 	"github.com/spf13/cobra"
 )
+
+// importEnvelope is the accepted import wire format: the tasks array plus any
+// envelope metadata (version/revision) that limbo export emits. Only Tasks is
+// consumed.
+type importEnvelope struct {
+	Version  string        `json:"version"`
+	Revision int           `json:"revision"`
+	Tasks    []models.Task `json:"tasks"`
+}
 
 var (
 	importReplace bool
@@ -34,13 +43,17 @@ func runImport(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to read file: %w", err)
 	}
 
-	var importData storage.TaskStore
+	var importData importEnvelope
 	if err := json.Unmarshal(data, &importData); err != nil {
 		return fmt.Errorf("failed to parse import file: %w", err)
 	}
 
 	store, err := getStorage()
 	if err != nil {
+		return err
+	}
+
+	if err := checkIfRevision(cmd, store); err != nil {
 		return err
 	}
 
@@ -75,7 +88,7 @@ func runImport(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func deleteAllTasks(store *storage.Storage) error {
+func deleteAllTasks(store *taskstore.Store) error {
 	existing, err := store.LoadAll()
 	if err != nil {
 		return err
@@ -90,7 +103,7 @@ func deleteAllTasks(store *storage.Storage) error {
 	return nil
 }
 
-func buildIDMapping(store *storage.Storage, tasks []models.Task) (map[string]string, error) {
+func buildIDMapping(store *taskstore.Store, tasks []models.Task) (map[string]string, error) {
 	m := make(map[string]string, len(tasks))
 	for i := range tasks {
 		newID, err := store.GenerateTaskID()

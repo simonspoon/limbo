@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +21,7 @@ func TestExportWithTasks(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -48,7 +47,7 @@ func TestExportPreservesRelationships(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -85,7 +84,7 @@ func TestExportPreservesRelationships(t *testing.T) {
 	require.Len(t, tasks, 2)
 
 	// Marshal to verify export format
-	exportData := storage.TaskStore{
+	exportData := exportEnvelope{
 		Version: "4.0.0",
 		Tasks:   tasks,
 	}
@@ -93,7 +92,7 @@ func TestExportPreservesRelationships(t *testing.T) {
 	require.NoError(t, err)
 
 	// Parse back and verify
-	var parsed storage.TaskStore
+	var parsed exportEnvelope
 	require.NoError(t, json.Unmarshal(data, &parsed))
 	require.Len(t, parsed.Tasks, 2)
 

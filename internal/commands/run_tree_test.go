@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
+	"github.com/simonspoon/limbo/internal/store/taskstore"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -41,7 +41,7 @@ func mkTask(id, parentID, status string, created time.Time) models.Task {
 
 // saveTasks persists a slice of tasks in order. Used to set up LoadSubtree /
 // BottomUpCleanup fixtures.
-func saveTasks(t *testing.T, store *storage.Storage, tasks []models.Task) {
+func saveTasks(t *testing.T, store *taskstore.Store, tasks []models.Task) {
 	t.Helper()
 	for i := range tasks {
 		require.NoError(t, store.SaveTask(&tasks[i]))
@@ -56,7 +56,7 @@ func TestTreeWalk_LoadSubtree_Empty(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -73,7 +73,7 @@ func TestTreeWalk_LoadSubtree_Chain(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -93,7 +93,7 @@ func TestTreeWalk_LoadSubtree_Star(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -114,7 +114,7 @@ func TestTreeWalk_LoadSubtree_Mixed(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	// A -> { B -> { C, D }, E -> F }
@@ -142,7 +142,7 @@ func TestTreeWalk_LoadSubtree_MissingRoot(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -159,7 +159,7 @@ func TestTreeWalk_LoadSubtree_CycleGuard(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	// Build a synthetic parent cycle: aaaa.Parent = bbbb, bbbb.Parent = aaaa.
@@ -184,7 +184,7 @@ func TestTreeWalk_BottomUpCleanup_AllDoneChain(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -225,7 +225,7 @@ func TestTreeWalk_BottomUpCleanup_PartialMixed(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	// A with { B=Done, C=Captured } — A must NOT be promoted.
@@ -251,7 +251,7 @@ func TestTreeWalk_BottomUpCleanup_Cascade(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	// 3-level cascade: G (Captured) -> P (Captured) -> {C1=Done, C2=Done}.
@@ -282,7 +282,7 @@ func TestTreeWalk_BottomUpCleanup_Idempotent(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -320,7 +320,7 @@ func TestTreeWalk_BottomUpCleanup_LeafUntouched(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -342,7 +342,7 @@ func TestTreeWalk_BottomUpCleanup_ManuallyDoneRootSkipped(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -448,7 +448,7 @@ func TestTreeWalk_FindNextLeaf_SkipsBlockedByNonDone(t *testing.T) {
 
 func TestTreeWalk_FindNextLeaf_BlockedByDanglingCountsResolved(t *testing.T) {
 	// BlockedBy references an ID that is NOT in the slice. That counts as
-	// resolved (matches storage.IsBlocked semantics), so the task is eligible.
+	// resolved (matches taskstore.IsBlocked semantics), so the task is eligible.
 	now := time.Now()
 	t1 := mkTask("aaaa", "", models.StatusCaptured, now)
 	t1.BlockedBy = []string{"zzzz"} // dangling

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -14,7 +13,7 @@ func TestParentCommand(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	// Create parent and child tasks
@@ -79,7 +78,7 @@ func TestParentCommand_SelfParent(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -105,7 +104,7 @@ func TestParentCommand_ChildNotFound(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -131,7 +130,7 @@ func TestParentCommand_ParentNotFound(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -158,7 +157,7 @@ func TestParentCommand_DoneParent(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	// Create done parent
@@ -195,7 +194,7 @@ func TestParentCommand_CircularDependency(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	// Create a chain: A -> B -> C
@@ -244,7 +243,7 @@ func TestParentCommand_PrettyOutput(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()

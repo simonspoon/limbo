@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -25,7 +24,7 @@ func TestPruneCommand_NoCompletedTasks(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -58,7 +57,7 @@ func TestPruneCommand_ArchivesCompletedTasks(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -107,7 +106,7 @@ func TestPruneCommand_SkipsTasksWithUndoneChildren(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -154,7 +153,7 @@ func TestPruneCommand_ArchivesTasksWithDoneChildren(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -201,7 +200,7 @@ func TestPruneCommand_Pretty(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -230,7 +229,7 @@ func TestPruneCommand_AccumulatesInArchive(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -272,7 +271,7 @@ func TestPruneCommand_CleansUpContextDirs(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -321,7 +320,7 @@ func TestPruneCommand_ArchivesWithContent(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()

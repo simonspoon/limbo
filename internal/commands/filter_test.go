@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -96,7 +95,7 @@ func TestListHidesDoneByDefault(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	createTestTask(t, store, "Todo task", models.StatusCaptured, nil)
@@ -119,7 +118,7 @@ func TestListShowAll(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	createTestTask(t, store, "Todo task", models.StatusCaptured, nil)
@@ -142,7 +141,7 @@ func TestTreeHidesDoneByDefault(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	createTestTask(t, store, "Todo task", models.StatusCaptured, nil)
@@ -160,7 +159,7 @@ func TestTreeShowAll(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	createTestTask(t, store, "Todo task", models.StatusCaptured, nil)

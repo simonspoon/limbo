@@ -37,6 +37,10 @@ func runUnparent(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if err := checkIfRevision(cmd, store); err != nil {
+		return err
+	}
+
 	// Load the task
 	task, err := store.LoadTask(id)
 	if err != nil {

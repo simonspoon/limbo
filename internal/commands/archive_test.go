@@ -6,14 +6,14 @@ import (
 	"time"
 
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
+	"github.com/simonspoon/limbo/internal/store/taskstore"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 // helper to create a done task, prune it into the archive, and return the storage
-func setupArchiveWithTask(t *testing.T, id, name string) *storage.Storage {
-	store, err := storage.NewStorage()
+func setupArchiveWithTask(t *testing.T, id, name string) *taskstore.Store {
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -187,7 +187,7 @@ func TestArchiveRestore_OrphanedParent(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -223,7 +223,7 @@ func TestArchiveRestore_PreservesParentWhenExists(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -270,7 +270,7 @@ func TestArchiveRestore_ClearsStaleBlockedBy(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -305,7 +305,7 @@ func TestArchiveRestore_KeepsValidBlockedBy(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -417,7 +417,7 @@ func TestArchiveRestore_CreatesContextDir(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -471,7 +471,7 @@ func TestArchive_FullLifecycle(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()

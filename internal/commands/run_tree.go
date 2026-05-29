@@ -5,7 +5,7 @@ import (
 	"sort"
 
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
+	"github.com/simonspoon/limbo/internal/store/taskstore"
 )
 
 // LoadSubtree returns all transitive descendants of rootID (excluding rootID
@@ -17,7 +17,7 @@ import (
 // an error is returned.
 //
 // The returned slice contains value copies of the descendant tasks.
-func LoadSubtree(store *storage.Storage, rootID string) ([]models.Task, error) {
+func LoadSubtree(store *taskstore.Store, rootID string) ([]models.Task, error) {
 	all, err := store.LoadAllIndex()
 	if err != nil {
 		return nil, err
@@ -81,7 +81,7 @@ func LoadSubtree(store *storage.Storage, rootID string) ([]models.Task, error) {
 //
 // A visited-set guards against parent-pointer cycles in the slice; cycles
 // return an error rather than infinite-looping.
-func BottomUpCleanup(store *storage.Storage, tasks []models.Task) error {
+func BottomUpCleanup(store *taskstore.Store, tasks []models.Task) error {
 	if len(tasks) == 0 {
 		return nil
 	}

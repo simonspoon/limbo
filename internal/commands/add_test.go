@@ -6,32 +6,53 @@ import (
 	"time"
 
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
+	"github.com/simonspoon/limbo/internal/store/taskstore"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+// setupTestEnv creates an isolated limbo project for a command test. It points
+// LIMBO_HOME at a fresh temp dir (so the central storage root lands there),
+// disables parent-directory climbing, chdir's into a project directory that
+// holds a .limbo-id anchor, and runs `limbo init` to seed the store. The
+// returned string is the project working directory; the cleanup restores cwd
+// and removes the temp tree.
 func setupTestEnv(t *testing.T) (string, func()) {
-	// Create temp directory
-	tmpDir, err := os.MkdirTemp("", "limbo-cmd-test-*")
+	t.Helper()
+
+	homeDir, err := os.MkdirTemp("", "limbo-home-*")
+	require.NoError(t, err)
+	projDir, err := os.MkdirTemp("", "limbo-proj-*")
 	require.NoError(t, err)
 
-	// Change to temp directory
+	// Anchor the project with a stable .limbo-id so resolution is git-free.
+	require.NoError(t, os.WriteFile(projDir+"/.limbo-id", []byte("test-project\n"), 0o644))
+
+	t.Setenv("LIMBO_HOME", homeDir)
+	t.Setenv(noClimbEnv, "1")
+
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	require.NoError(t, os.Chdir(tmpDir))
+	require.NoError(t, os.Chdir(projDir))
 
-	// Initialize limbo
-	store := storage.NewStorageAt(tmpDir)
-	require.NoError(t, store.Init())
+	// Seed the central store via init.
+	initPretty = false
+	require.NoError(t, runInit(initCmd, nil))
 
-	// Return cleanup function
 	cleanup := func() {
 		os.Chdir(origDir)
-		os.RemoveAll(tmpDir)
+		os.RemoveAll(projDir)
+		os.RemoveAll(homeDir)
 	}
 
-	return tmpDir, cleanup
+	return projDir, cleanup
+}
+
+// testStore resolves the central-path taskstore facade for the current test
+// project. It replaces the legacy storage.NewStorage() call sites.
+func testStore(t *testing.T) (*taskstore.Store, error) {
+	t.Helper()
+	return getStorage()
 }
 
 func resetAddFlags() {
@@ -66,7 +87,7 @@ func TestAddCommand(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify task was created
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	tasks, err := store.LoadAll()
@@ -95,7 +116,7 @@ func TestAddCommandWithDescription(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify task
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	tasks, err := store.LoadAll()
@@ -121,7 +142,7 @@ func TestAddCommandWithParent(t *testing.T) {
 	require.NoError(t, err)
 
 	// Get parent ID
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	tasks, err := store.LoadAll()
@@ -209,7 +230,7 @@ func TestAddCommandToDoneParent(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	// Create a done parent task
@@ -262,7 +283,7 @@ func TestAddCommand_WithoutStructuredFlags(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify task was created with empty structured fields
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	tasks, err := store.LoadAll()
@@ -288,7 +309,7 @@ func TestAddCommand_ApproachFlag(t *testing.T) {
 	err := runAdd(nil, []string{"Approach Task"})
 	require.NoError(t, err)
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	tasks, err := store.LoadAll()
@@ -307,7 +328,7 @@ func TestAddCommand_ActionAliasForApproach(t *testing.T) {
 	err := runAdd(nil, []string{"Action Alias Task"})
 	require.NoError(t, err)
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	tasks, err := store.LoadAll()
@@ -327,7 +348,7 @@ func TestAddCommand_ApproachWinsOverAction(t *testing.T) {
 	err := runAdd(nil, []string{"Approach Wins Task"})
 	require.NoError(t, err)
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	tasks, err := store.LoadAll()
@@ -347,7 +368,7 @@ func TestAddCommand_NameFlag(t *testing.T) {
 	err := runAdd(nil, []string{})
 	require.NoError(t, err)
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	tasks, err := store.LoadAll()
@@ -367,7 +388,7 @@ func TestAddCommand_PositionalWinsOverNameFlag(t *testing.T) {
 	err := runAdd(nil, []string{"positional wins"})
 	require.NoError(t, err)
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	tasks, err := store.LoadAll()
@@ -403,7 +424,7 @@ func TestAddCommand_NewMetadataFields(t *testing.T) {
 	err := runAdd(nil, []string{"Full Metadata Task"})
 	require.NoError(t, err)
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	tasks, err := store.LoadAll()

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,7 +21,7 @@ func TestStatus_ForwardTransitions_HappyPath(t *testing.T) {
 	defer cleanup()
 	resetStatusFlags()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -76,7 +75,7 @@ func TestStatus_ForwardWithOutcome(t *testing.T) {
 	defer cleanup()
 	resetStatusFlags()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -104,7 +103,7 @@ func TestStatus_BackwardWithoutReason_Succeeds(t *testing.T) {
 	defer cleanup()
 	resetStatusFlags()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -131,7 +130,7 @@ func TestStatus_BackwardWithReason_RecordsIt(t *testing.T) {
 	defer cleanup()
 	resetStatusFlags()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -164,7 +163,7 @@ func TestStatus_ManuallyBlockedTask_CannotTransition(t *testing.T) {
 	defer cleanup()
 	resetStatusFlags()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -195,7 +194,7 @@ func TestStatus_HistoryRecorded(t *testing.T) {
 	defer cleanup()
 	resetStatusFlags()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -239,7 +238,7 @@ func TestStatusCommand_InvalidStatus(t *testing.T) {
 	defer cleanup()
 	resetStatusFlags()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -282,7 +281,7 @@ func TestStatusCommand_PrettyOutput(t *testing.T) {
 	defer cleanup()
 	resetStatusFlags()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -306,7 +305,7 @@ func TestStatusCommand_SameStatusNoOp(t *testing.T) {
 	defer cleanup()
 	resetStatusFlags()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -329,7 +328,7 @@ func TestStatus_AutoRemovesBlockedBy(t *testing.T) {
 	defer cleanup()
 	resetStatusFlags()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -366,7 +365,7 @@ func TestStatus_DoneWithoutOutcome_Succeeds(t *testing.T) {
 	defer cleanup()
 	resetStatusFlags()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -396,7 +395,7 @@ func TestStatus_MultiStageJump_Succeeds(t *testing.T) {
 	defer cleanup()
 	resetStatusFlags()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()

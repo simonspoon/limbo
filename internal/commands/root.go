@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
 
-	"github.com/simonspoon/limbo/internal/storage"
+	"github.com/simonspoon/limbo/internal/store/taskstore"
 	"github.com/spf13/cobra"
 )
 
@@ -16,24 +15,12 @@ var Version = "dev"
 // noClimbFlag backs the --no-climb persistent flag.
 var noClimbFlag bool
 
-// climbWarnOnce guards the home-dir-climb warning so it emits at most once
-// per invocation even when getStorage() is called multiple times.
-var climbWarnOnce sync.Once
-
 var rootCmd = &cobra.Command{
 	Use:     "limbo",
 	Version: Version,
 	Short:   "CLI Project Manager - A lightweight JSON-based task queue for LLMs",
 	Long: `limbo is a CLI-based task manager designed for use by LLMs and agents.
 It uses a single JSON file for storage and outputs JSON by default for easy parsing.`,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		if noClimbFlag {
-			if err := os.Setenv(storage.NoClimbEnv, "1"); err != nil {
-				return err
-			}
-		}
-		return nil
-	},
 }
 
 // Execute runs the root command
@@ -44,72 +31,63 @@ func Execute() {
 	}
 }
 
-// getStorage returns a Storage instance for the current project. When the
-// resolved .limbo root is an ancestor of cwd AND matches $HOME, a one-shot
-// warning is emitted to stderr to surface accidental home-dir store use.
-func getStorage() (*storage.Storage, error) {
-	store, err := storage.NewStorage()
+// getStorage resolves the central, per-project storage root for the current
+// working directory and returns a taskstore facade rooted there. It climbs for
+// a project anchor (honoring --no-climb / LIMBO_NO_CLIMB), derives the project
+// ID, and computes the platform-conventional storage root (LIMBO_HOME honored).
+// When no anchor is found or no ID can be derived it returns an error directing
+// the user to run `limbo init`.
+func getStorage() (*taskstore.Store, error) {
+	projectRoot, centralRoot, err := resolveRoots()
 	if err != nil {
 		return nil, err
 	}
-	maybeWarnHomeClimb(store.GetRootDir())
-	return store, nil
+
+	legacyDir := filepath.Join(projectRoot, ".limbo")
+	legacyExists := fileExists(filepath.Join(legacyDir, "tasks.json"))
+	centralExists := fileExists(filepath.Join(centralRoot, "tasks.json"))
+
+	switch {
+	case legacyExists && centralExists:
+		// (A18) Both stores exist. Central wins, but warn loudly (multi-line,
+		// naming both paths, recommending migrate) on EVERY invocation until the
+		// legacy dir is removed or renamed. No data is touched.
+		fmt.Fprintln(os.Stderr, "limbo: WARNING: both a legacy in-tree store and a central store were found.")
+		fmt.Fprintf(os.Stderr, "  legacy (ignored): %s\n", legacyDir)
+		fmt.Fprintf(os.Stderr, "  central (in use): %s\n", centralRoot)
+		fmt.Fprintln(os.Stderr, "  Using the central store. Run 'limbo migrate' (or delete/rename the legacy dir) to silence this warning.")
+		return taskstore.New(centralRoot), nil
+	case legacyExists:
+		// (A19) Only a legacy in-tree store exists. Use it transparently for
+		// this invocation (read path only — no schema mutation, A23) and warn
+		// on a single line to recommend migrate.
+		fmt.Fprintf(os.Stderr, "limbo: using legacy in-tree store at %s; run 'limbo migrate' to move it to the central location.\n", legacyDir)
+		return taskstore.New(legacyDir), nil
+	default:
+		// Only central (or neither) — current behavior, no warning.
+		return taskstore.New(centralRoot), nil
+	}
 }
 
-// maybeWarnHomeClimb emits a one-shot stderr warning when the resolved
-// limbo root is an ancestor of the current working directory AND equals
-// the user's home directory. This catches the common case where a project
-// subdir with no local .limbo silently uses ~/.limbo, contaminating the
-// home-dir backlog with project tasks.
-func maybeWarnHomeClimb(rootDir string) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return
-	}
-	home, err := os.UserHomeDir()
-	if err != nil || home == "" {
-		return
-	}
-
-	// Resolve symlinks so macOS /var vs /private/var comparisons work.
-	resolvedRoot := evalSymlinksOrSelf(rootDir)
-	resolvedCwd := evalSymlinksOrSelf(cwd)
-	resolvedHome := evalSymlinksOrSelf(home)
-
-	// Only warn when the store was found above cwd (climb occurred) AND
-	// that ancestor is the home directory.
-	if resolvedRoot == resolvedCwd {
-		return
-	}
-	if resolvedRoot != resolvedHome {
-		return
-	}
-
-	climbWarnOnce.Do(func() {
-		fmt.Fprintf(os.Stderr,
-			"warning: using limbo store at %s (ancestor of %s).\n"+
-				"  store matches $HOME — may cause home-dir backlog contamination.\n"+
-				"  run 'limbo init' here, or set %s=1 / pass --no-climb to disable parent search.\n",
-			rootDir, cwd, storage.NoClimbEnv)
-	})
-}
-
-// evalSymlinksOrSelf resolves symlinks, falling back to the input on error.
-func evalSymlinksOrSelf(path string) string {
-	resolved, err := filepath.EvalSymlinks(path)
-	if err != nil {
-		return path
-	}
-	return resolved
+// fileExists reports whether path exists as a regular (non-directory) file.
+func fileExists(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && !info.IsDir()
 }
 
 func init() {
 	// Persistent flags available on all subcommands.
 	rootCmd.PersistentFlags().BoolVar(&noClimbFlag, "no-climb", false,
-		"do not search parent directories for .limbo (equivalent to LIMBO_NO_CLIMB=1)")
+		"do not search parent directories for a project anchor (equivalent to LIMBO_NO_CLIMB=1)")
+
+	// Global mutating-command guard (A7). Stored as a flag value with a
+	// Changed() check at use sites, since 0 is a valid revision.
+	rootCmd.PersistentFlags().Int("if-revision", 0,
+		"only mutate when the store's current revision equals N (no-op on read-only commands)")
 
 	// Add subcommands
 	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(migrateCmd)
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(showCmd)

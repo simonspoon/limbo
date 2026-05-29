@@ -139,6 +139,10 @@ func runArchiveRestore(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if err := checkIfRevision(cmd, store); err != nil {
+		return err
+	}
+
 	// Check for ID collision in active store
 	_, err = store.LoadTask(id)
 	if err == nil {
@@ -214,6 +218,10 @@ type purgeResult struct {
 func runArchivePurge(cmd *cobra.Command, args []string) error {
 	store, err := getStorage()
 	if err != nil {
+		return err
+	}
+
+	if err := checkIfRevision(cmd, store); err != nil {
 		return err
 	}
 

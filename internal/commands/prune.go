@@ -68,6 +68,10 @@ func runPrune(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if err := checkIfRevision(cmd, store); err != nil {
+		return err
+	}
+
 	tasks, err := store.LoadAll()
 	if err != nil {
 		return err

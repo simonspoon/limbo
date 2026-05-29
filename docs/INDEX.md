@@ -8,6 +8,7 @@ This index helps you find the right documentation for your current task. Read on
 |-------|------|-------------|
 | Architecture | [dev/architecture.md](dev/architecture.md) | Onboarding, understanding package relationships, data flow |
 | Data Model | [dev/data-model.md](dev/data-model.md) | Working with Task/Note/WatchEvent types, understanding JSON output format |
+| Storage & Project IDs | [dev/storage.md](dev/storage.md) | Where the central store lives, how project IDs are derived, why forks share a store and how `.limbo-id` overrides it |
 | Contributing | [dev/contributing.md](dev/contributing.md) | Adding features, adding commands, running tests, PR checklist |
 
 ### User Documentation

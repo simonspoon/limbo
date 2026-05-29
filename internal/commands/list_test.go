@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
+	"github.com/simonspoon/limbo/internal/store/taskstore"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func createTestTask(t *testing.T, store *storage.Storage, name, status string, parent *string) string {
+func createTestTask(t *testing.T, store *taskstore.Store, name, status string, parent *string) string {
 	now := time.Now()
 	id, err := store.GenerateTaskID()
 	require.NoError(t, err)
@@ -31,7 +31,7 @@ func TestListCommand(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	// Create tasks with different statuses
@@ -52,7 +52,7 @@ func TestListFilterByStatus(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	// Create tasks with different statuses
@@ -107,7 +107,7 @@ func TestListWithStatusFilter(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	// Create tasks with different statuses
@@ -127,7 +127,7 @@ func TestListPrettyOutput(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	// Create tasks
@@ -145,7 +145,7 @@ func TestListFilterByNewStatuses(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	// Create tasks with various new statuses
@@ -182,7 +182,7 @@ func TestListPrettyWithAllStatuses(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	// Create one task per status
@@ -211,7 +211,7 @@ func TestListFilterByParent(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	// Two top-level tasks; one has two children
@@ -266,7 +266,7 @@ func TestListFilterByParentCombinesWithStatus(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	parentID := createTestTask(t, store, "Parent", models.StatusInProgress, nil)
@@ -299,7 +299,7 @@ func TestListParentFlagUnsetShowsAll(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	topID := createTestTask(t, store, "Top", models.StatusCaptured, nil)

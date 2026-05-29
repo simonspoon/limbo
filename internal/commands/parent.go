@@ -7,7 +7,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
+	"github.com/simonspoon/limbo/internal/store/taskstore"
 	"github.com/spf13/cobra"
 )
 
@@ -44,6 +44,10 @@ func runParent(cmd *cobra.Command, args []string) error {
 	// Load storage
 	store, err := getStorage()
 	if err != nil {
+		return err
+	}
+
+	if err := checkIfRevision(cmd, store); err != nil {
 		return err
 	}
 
@@ -93,7 +97,7 @@ func runParent(cmd *cobra.Command, args []string) error {
 }
 
 // wouldCreateCycle checks if setting parentID as the parent of childID would create a cycle
-func wouldCreateCycle(store *storage.Storage, childID, parentID string) bool {
+func wouldCreateCycle(store *taskstore.Store, childID, parentID string) bool {
 	// Traverse up the parent chain from the proposed parent
 	// If we encounter childID, we have a cycle
 	currentID := parentID

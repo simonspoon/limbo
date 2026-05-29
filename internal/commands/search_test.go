@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
+	"github.com/simonspoon/limbo/internal/store/taskstore"
 	"github.com/stretchr/testify/require"
 )
 
-func createSearchTestTask(t *testing.T, store *storage.Storage, name, description, status string) string {
+func createSearchTestTask(t *testing.T, store *taskstore.Store, name, description, status string) string {
 	now := time.Now()
 	id, err := store.GenerateTaskID()
 	require.NoError(t, err)
@@ -35,7 +35,7 @@ func TestSearchBasicMatch(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	createSearchTestTask(t, store, "Build login page", "", models.StatusCaptured)
@@ -50,7 +50,7 @@ func TestSearchNoMatch(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	createSearchTestTask(t, store, "Build login page", "", models.StatusCaptured)
@@ -64,7 +64,7 @@ func TestSearchCaseInsensitive(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	createSearchTestTask(t, store, "Build Login Page", "", models.StatusCaptured)
@@ -83,7 +83,7 @@ func TestSearchPartialMatch(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	createSearchTestTask(t, store, "Implement authentication", "", models.StatusCaptured)
@@ -97,7 +97,7 @@ func TestSearchMatchesDescription(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	createSearchTestTask(t, store, "Task one", "Handle user authentication", models.StatusCaptured)
@@ -112,7 +112,7 @@ func TestSearchPrettyOutput(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	createSearchTestTask(t, store, "Build login page", "", models.StatusCaptured)
@@ -128,7 +128,7 @@ func TestSearchAllStatuses(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	createSearchTestTask(t, store, "Login todo", "", models.StatusCaptured)

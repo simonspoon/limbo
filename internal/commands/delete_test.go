@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
+	"github.com/simonspoon/limbo/internal/store/taskstore"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,7 +16,7 @@ func TestDeleteCommand(t *testing.T) {
 	defer cleanup()
 
 	// Create a test task
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -39,7 +39,7 @@ func TestDeleteCommand(t *testing.T) {
 	// Verify task was deleted
 	_, err = store.LoadTask(task.ID)
 	assert.Error(t, err)
-	assert.Equal(t, storage.ErrTaskNotFound, err)
+	assert.Equal(t, taskstore.ErrTaskNotFound, err)
 }
 
 func TestDeleteCommand_TaskNotFound(t *testing.T) {
@@ -70,7 +70,7 @@ func TestDeleteCommand_BlockedByUndoneChildren(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -114,7 +114,7 @@ func TestDeleteCommand_AllowedWithDoneChildren(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -162,7 +162,7 @@ func TestDeleteCommand_BlockedByUndoneGrandchildren(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -218,7 +218,7 @@ func TestDeleteCommand_CleansUpBlockedBy(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -261,7 +261,7 @@ func TestDeleteCommand_PrettyOutput(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -286,7 +286,7 @@ func TestDeleteCommand_CleansUpContextDir(t *testing.T) {
 	_, cleanup := setupTestEnv(t)
 	defer cleanup()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	now := time.Now()

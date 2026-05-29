@@ -8,13 +8,12 @@ import (
 	"time"
 
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
 	"github.com/stretchr/testify/require"
 )
 
 func writeExportFile(t *testing.T, dir string, tasks []models.Task) string {
 	t.Helper()
-	exportData := storage.TaskStore{
+	exportData := exportEnvelope{
 		Version: "4.0.0",
 		Tasks:   tasks,
 	}
@@ -42,7 +41,7 @@ func TestImportBasic(t *testing.T) {
 	err := runImport(nil, []string{filePath})
 	require.NoError(t, err)
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 	loaded, err := store.LoadAll()
 	require.NoError(t, err)
@@ -55,7 +54,7 @@ func TestImportMergeMode(t *testing.T) {
 
 	resetImportFlags()
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	// Create an existing task
@@ -92,7 +91,7 @@ func TestImportReplaceMode(t *testing.T) {
 	resetImportFlags()
 	importReplace = true
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 
 	// Create existing tasks
@@ -144,7 +143,7 @@ func TestImportPreservesRelationships(t *testing.T) {
 	err := runImport(nil, []string{filePath})
 	require.NoError(t, err)
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 	loaded, err := store.LoadAll()
 	require.NoError(t, err)
@@ -183,7 +182,7 @@ func TestImportNewIDs(t *testing.T) {
 	err := runImport(nil, []string{filePath})
 	require.NoError(t, err)
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 	loaded, err := store.LoadAll()
 	require.NoError(t, err)
@@ -229,7 +228,7 @@ func TestImportEmptyFile(t *testing.T) {
 	err := runImport(nil, []string{filePath})
 	require.NoError(t, err)
 
-	store, err := storage.NewStorage()
+	store, err := testStore(t)
 	require.NoError(t, err)
 	loaded, err := store.LoadAll()
 	require.NoError(t, err)

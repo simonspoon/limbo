@@ -7,7 +7,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
+	"github.com/simonspoon/limbo/internal/store/taskstore"
 	"github.com/spf13/cobra"
 )
 
@@ -45,9 +45,13 @@ func runClaim(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if err := checkIfRevision(cmd, store); err != nil {
+		return err
+	}
+
 	task, err := store.LoadTask(id)
 	if err != nil {
-		if err == storage.ErrTaskNotFound {
+		if err == taskstore.ErrTaskNotFound {
 			return fmt.Errorf("task %s not found", id)
 		}
 		return err

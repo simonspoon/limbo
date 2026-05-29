@@ -7,7 +7,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
+	"github.com/simonspoon/limbo/internal/store/taskstore"
 	"github.com/spf13/cobra"
 )
 
@@ -97,7 +97,7 @@ func validateListFlags() error {
 	return nil
 }
 
-func applyListFilters(tasks []models.Task, store *storage.Storage, parentSet bool) ([]models.Task, error) {
+func applyListFilters(tasks []models.Task, store *taskstore.Store, parentSet bool) ([]models.Task, error) {
 	if listStatus != "" {
 		tasks = filterTasksByStatus(tasks, listStatus)
 	}
@@ -179,7 +179,7 @@ func filterByParent(tasks []models.Task, parent string) []models.Task {
 	return filtered
 }
 
-func filterBlocked(tasks []models.Task, store *storage.Storage, wantBlocked bool) ([]models.Task, error) {
+func filterBlocked(tasks []models.Task, store *taskstore.Store, wantBlocked bool) ([]models.Task, error) {
 	var filtered []models.Task
 	for i := range tasks {
 		blocked, err := store.IsBlocked(&tasks[i])

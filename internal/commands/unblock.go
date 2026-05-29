@@ -7,7 +7,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
+	"github.com/simonspoon/limbo/internal/store/taskstore"
 	"github.com/spf13/cobra"
 )
 
@@ -43,12 +43,12 @@ func init() {
 
 func runUnblock(cmd *cobra.Command, args []string) error {
 	if len(args) == 1 {
-		return runManualUnblock(args)
+		return runManualUnblock(cmd, args)
 	}
-	return runDependencyUnblock(args)
+	return runDependencyUnblock(cmd, args)
 }
 
-func runDependencyUnblock(args []string) error {
+func runDependencyUnblock(cmd *cobra.Command, args []string) error {
 	blockerID := models.NormalizeTaskID(args[0])
 	if !models.IsValidTaskID(blockerID) {
 		return fmt.Errorf("invalid blocker ID: %s", args[0])
@@ -63,9 +63,13 @@ func runDependencyUnblock(args []string) error {
 		return err
 	}
 
+	if err := checkIfRevision(cmd, store); err != nil {
+		return err
+	}
+
 	blocked, err := store.LoadTask(blockedID)
 	if err != nil {
-		if err == storage.ErrTaskNotFound {
+		if err == taskstore.ErrTaskNotFound {
 			return fmt.Errorf("task %s not found", blockedID)
 		}
 		return err
@@ -107,7 +111,7 @@ func runDependencyUnblock(args []string) error {
 	return nil
 }
 
-func runManualUnblock(args []string) error {
+func runManualUnblock(cmd *cobra.Command, args []string) error {
 	id := models.NormalizeTaskID(args[0])
 	if !models.IsValidTaskID(id) {
 		return fmt.Errorf("invalid task ID: %s", args[0])
@@ -118,9 +122,13 @@ func runManualUnblock(args []string) error {
 		return err
 	}
 
+	if err := checkIfRevision(cmd, store); err != nil {
+		return err
+	}
+
 	task, err := store.LoadTask(id)
 	if err != nil {
-		if err == storage.ErrTaskNotFound {
+		if err == taskstore.ErrTaskNotFound {
 			return fmt.Errorf("task %s not found", id)
 		}
 		return err

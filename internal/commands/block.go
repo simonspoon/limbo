@@ -7,7 +7,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/simonspoon/limbo/internal/models"
-	"github.com/simonspoon/limbo/internal/storage"
+	"github.com/simonspoon/limbo/internal/store/taskstore"
 	"github.com/spf13/cobra"
 )
 
@@ -46,12 +46,12 @@ func init() {
 
 func runBlock(cmd *cobra.Command, args []string) error {
 	if len(args) == 1 {
-		return runManualBlock(args)
+		return runManualBlock(cmd, args)
 	}
-	return runDependencyBlock(args)
+	return runDependencyBlock(cmd, args)
 }
 
-func runDependencyBlock(args []string) error {
+func runDependencyBlock(cmd *cobra.Command, args []string) error {
 	blockerID, blockedID, err := parseBlockArgs(args)
 	if err != nil {
 		return err
@@ -59,6 +59,10 @@ func runDependencyBlock(args []string) error {
 
 	store, err := getStorage()
 	if err != nil {
+		return err
+	}
+
+	if err := checkIfRevision(cmd, store); err != nil {
 		return err
 	}
 
@@ -92,7 +96,7 @@ func runDependencyBlock(args []string) error {
 	return nil
 }
 
-func runManualBlock(args []string) error {
+func runManualBlock(cmd *cobra.Command, args []string) error {
 	id := models.NormalizeTaskID(args[0])
 	if !models.IsValidTaskID(id) {
 		return fmt.Errorf("invalid task ID: %s", args[0])
@@ -107,9 +111,13 @@ func runManualBlock(args []string) error {
 		return err
 	}
 
+	if err := checkIfRevision(cmd, store); err != nil {
+		return err
+	}
+
 	task, err := store.LoadTask(id)
 	if err != nil {
-		if err == storage.ErrTaskNotFound {
+		if err == taskstore.ErrTaskNotFound {
 			return fmt.Errorf("task %s not found", id)
 		}
 		return err
@@ -164,10 +172,10 @@ func parseBlockArgs(args []string) (blockerID, blockedID string, err error) {
 	return blockerID, blockedID, nil
 }
 
-func loadBlockTasks(store *storage.Storage, blockerID, blockedID string) (*models.Task, *models.Task, error) {
+func loadBlockTasks(store *taskstore.Store, blockerID, blockedID string) (*models.Task, *models.Task, error) {
 	blocker, err := store.LoadTask(blockerID)
 	if err != nil {
-		if err == storage.ErrTaskNotFound {
+		if err == taskstore.ErrTaskNotFound {
 			return nil, nil, fmt.Errorf("blocker task %s not found", blockerID)
 		}
 		return nil, nil, err
@@ -175,7 +183,7 @@ func loadBlockTasks(store *storage.Storage, blockerID, blockedID string) (*model
 
 	blocked, err := store.LoadTask(blockedID)
 	if err != nil {
-		if err == storage.ErrTaskNotFound {
+		if err == taskstore.ErrTaskNotFound {
 			return nil, nil, fmt.Errorf("blocked task %s not found", blockedID)
 		}
 		return nil, nil, err
@@ -183,7 +191,7 @@ func loadBlockTasks(store *storage.Storage, blockerID, blockedID string) (*model
 	return blocker, blocked, nil
 }
 
-func validateBlock(store *storage.Storage, blocker, blocked *models.Task, blockerID, blockedID string) error {
+func validateBlock(store *taskstore.Store, blocker, blocked *models.Task, blockerID, blockedID string) error {
 	if blocker.Status == models.StatusDone {
 		return fmt.Errorf("cannot block on completed task %s", blockerID)
 	}
