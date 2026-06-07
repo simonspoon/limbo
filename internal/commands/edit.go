@@ -3,6 +3,7 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -25,7 +26,39 @@ var (
 	editRisks              string
 	editReport             string
 	editPretty             bool
+	editForce              bool
 )
+
+// writeOnceFields maps an edit flag name to an accessor for the task field it
+// sets. Once such a field holds a non-empty value, re-setting it requires
+// --force, enforcing one-writer-per-field at the storage boundary.
+var writeOnceFields = []struct {
+	flag    string
+	current func(*models.Task) string
+}{
+	{"approach", func(t *models.Task) string { return t.Approach }},
+	{"acceptance-criteria", func(t *models.Task) string { return t.AcceptanceCriteria }},
+	{"test-strategy", func(t *models.Task) string { return t.TestStrategy }},
+	{"risks", func(t *models.Task) string { return t.Risks }},
+	{"report", func(t *models.Task) string { return t.Report }},
+}
+
+// lockedFieldConflicts returns the names of write-once fields that already hold
+// a value and are being overwritten by this edit. --action is treated as an
+// alias for --approach.
+func lockedFieldConflicts(cmd *cobra.Command, task *models.Task) []string {
+	var conflicts []string
+	for _, f := range writeOnceFields {
+		changed := cmd.Flags().Changed(f.flag)
+		if f.flag == "approach" {
+			changed = changed || cmd.Flags().Changed("action")
+		}
+		if changed && f.current(task) != "" {
+			conflicts = append(conflicts, f.flag)
+		}
+	}
+	return conflicts
+}
 
 var editCmd = &cobra.Command{
 	Use:   "edit <id>",
@@ -49,6 +82,7 @@ func init() {
 	editCmd.Flags().StringVar(&editRisks, "risks", "", "Known risks and mitigations")
 	editCmd.Flags().StringVar(&editReport, "report", "", "Completion report")
 	editCmd.Flags().BoolVar(&editPretty, "pretty", false, "Pretty print output")
+	editCmd.Flags().BoolVar(&editForce, "force", false, "Overwrite write-once fields (approach, acceptance-criteria, test-strategy, risks, report) that are already set")
 	_ = editCmd.Flags().MarkHidden("action")
 }
 
@@ -126,6 +160,12 @@ func runEdit(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("task %s not found", id)
 		}
 		return err
+	}
+
+	if !editForce {
+		if locked := lockedFieldConflicts(cmd, task); len(locked) > 0 {
+			return fmt.Errorf("refusing to overwrite write-once field(s) already set: %s (use --force to override)", strings.Join(locked, ", "))
+		}
 	}
 
 	if !applyEditFlags(cmd, task) {

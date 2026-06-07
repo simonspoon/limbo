@@ -27,6 +27,7 @@ func executeEdit(args ...string) error {
 	editRisks = ""
 	editReport = ""
 	editPretty = false
+	editForce = false
 
 	// Create a fresh command with clean flag state
 	cmd := &cobra.Command{
@@ -47,6 +48,7 @@ func executeEdit(args ...string) error {
 	cmd.Flags().StringVar(&editRisks, "risks", "", "Known risks and mitigations")
 	cmd.Flags().StringVar(&editReport, "report", "", "Completion report")
 	cmd.Flags().BoolVar(&editPretty, "pretty", false, "Pretty print output")
+	cmd.Flags().BoolVar(&editForce, "force", false, "Overwrite write-once fields that are already set")
 	_ = cmd.Flags().MarkHidden("action")
 	cmd.SetArgs(args)
 	return cmd.Execute()
@@ -124,7 +126,7 @@ func TestEditCommand_Action(t *testing.T) {
 	}
 	require.NoError(t, store.SaveTask(task))
 
-	err = executeEdit("aaaa", "--action", "New action")
+	err = executeEdit("aaaa", "--action", "New action", "--force")
 	require.NoError(t, err)
 
 	updated, err := store.LoadTask("aaaa")
@@ -156,7 +158,7 @@ func TestEditCommand_MultipleFields(t *testing.T) {
 	}
 	require.NoError(t, store.SaveTask(task))
 
-	err = executeEdit("aaaa", "--name", "Updated Task", "--action", "New action", "--verify", "New verify")
+	err = executeEdit("aaaa", "--name", "Updated Task", "--action", "New action", "--verify", "New verify", "--force")
 	require.NoError(t, err)
 
 	updated, err := store.LoadTask("aaaa")
@@ -341,7 +343,7 @@ func TestEditCommand_ApproachFlag(t *testing.T) {
 	}
 	require.NoError(t, store.SaveTask(task))
 
-	err = executeEdit("aaaa", "--approach", "New approach")
+	err = executeEdit("aaaa", "--approach", "New approach", "--force")
 	require.NoError(t, err)
 
 	updated, err := store.LoadTask("aaaa")
@@ -367,7 +369,7 @@ func TestEditCommand_ActionAliasForApproach(t *testing.T) {
 	}
 	require.NoError(t, store.SaveTask(task))
 
-	err = executeEdit("aaaa", "--action", "Via action alias")
+	err = executeEdit("aaaa", "--action", "Via action alias", "--force")
 	require.NoError(t, err)
 
 	updated, err := store.LoadTask("aaaa")
@@ -410,4 +412,145 @@ func TestEditCommand_NewMetadataFields(t *testing.T) {
 	assert.Equal(t, "unit + integration", updated.TestStrategy)
 	assert.Equal(t, "backward compat risk", updated.Risks)
 	assert.Equal(t, "summary of changes", updated.Report)
+}
+
+func TestEditCommand_WriteOnceBlocksOverwrite(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := testStore(t)
+	require.NoError(t, err)
+
+	now := time.Now()
+	task := &models.Task{
+		ID:                 "aaaa",
+		Name:               "Test Task",
+		Approach:           "Original approach",
+		AcceptanceCriteria: "Original criteria",
+		TestStrategy:       "Original strategy",
+		Risks:              "Original risks",
+		Report:             "Original report",
+		Status:             models.StatusCaptured,
+		Created:            now,
+		Updated:            now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	cases := []struct {
+		flag, value string
+	}{
+		{"--approach", "New approach"},
+		{"--action", "New action"},
+		{"--acceptance-criteria", "New criteria"},
+		{"--test-strategy", "New strategy"},
+		{"--risks", "New risks"},
+		{"--report", "New report"},
+	}
+	for _, c := range cases {
+		err := executeEdit("aaaa", c.flag, c.value)
+		assert.Error(t, err, "%s should be blocked when already set", c.flag)
+		assert.Contains(t, err.Error(), "write-once")
+	}
+
+	// Store must be untouched by the rejected edits.
+	updated, err := store.LoadTask("aaaa")
+	require.NoError(t, err)
+	assert.Equal(t, "Original approach", updated.Approach)
+	assert.Equal(t, "Original criteria", updated.AcceptanceCriteria)
+	assert.Equal(t, "Original strategy", updated.TestStrategy)
+	assert.Equal(t, "Original risks", updated.Risks)
+	assert.Equal(t, "Original report", updated.Report)
+}
+
+func TestEditCommand_WriteOnceAllowsFirstSet(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := testStore(t)
+	require.NoError(t, err)
+
+	now := time.Now()
+	task := &models.Task{
+		ID:      "aaaa",
+		Name:    "Test Task",
+		Status:  models.StatusCaptured,
+		Created: now,
+		Updated: now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	// First write of an empty write-once field needs no --force.
+	err = executeEdit("aaaa", "--approach", "First approach")
+	require.NoError(t, err)
+
+	updated, err := store.LoadTask("aaaa")
+	require.NoError(t, err)
+	assert.Equal(t, "First approach", updated.Approach)
+}
+
+func TestEditCommand_WriteOnceForceOverwrites(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := testStore(t)
+	require.NoError(t, err)
+
+	now := time.Now()
+	task := &models.Task{
+		ID:       "aaaa",
+		Name:     "Test Task",
+		Approach: "Original approach",
+		Status:   models.StatusCaptured,
+		Created:  now,
+		Updated:  now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	err = executeEdit("aaaa", "--approach", "Forced approach", "--force")
+	require.NoError(t, err)
+
+	updated, err := store.LoadTask("aaaa")
+	require.NoError(t, err)
+	assert.Equal(t, "Forced approach", updated.Approach)
+}
+
+func TestEditCommand_NonProtectedFieldsOverwriteFreely(t *testing.T) {
+	_, cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	store, err := testStore(t)
+	require.NoError(t, err)
+
+	now := time.Now()
+	task := &models.Task{
+		ID:            "aaaa",
+		Name:          "Old Name",
+		Description:   "Old desc",
+		Verify:        "Old verify",
+		Result:        "Old result",
+		ScopeOut:      "Old scope",
+		AffectedAreas: "Old areas",
+		Status:        models.StatusCaptured,
+		Created:       now,
+		Updated:       now,
+	}
+	require.NoError(t, store.SaveTask(task))
+
+	// None of these are write-once; overwriting must succeed without --force.
+	err = executeEdit("aaaa",
+		"--name", "New Name",
+		"--verify", "New verify",
+		"--result", "New result",
+		"--scope-out", "New scope",
+		"--affected-areas", "New areas",
+	)
+	require.NoError(t, err)
+
+	updated, err := store.LoadTask("aaaa")
+	require.NoError(t, err)
+	assert.Equal(t, "New Name", updated.Name)
+	assert.Equal(t, "New verify", updated.Verify)
+	assert.Equal(t, "New result", updated.Result)
+	assert.Equal(t, "New scope", updated.ScopeOut)
+	assert.Equal(t, "New areas", updated.AffectedAreas)
 }

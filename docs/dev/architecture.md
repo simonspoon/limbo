@@ -224,5 +224,6 @@ These constraints are enforced in the individual command files in `internal/comm
 - `block` with 1 arg + `--reason` creates a manual block; with 2 args creates a dependency block.
 - `unblock` with 1 arg removes a manual block and restores the previous stage; with 2 args removes a dependency.
 - `claim` fails if `Owner` is already set; `--force` overrides.
+- `edit` enforces write-once on `Approach` (incl. the `--action` alias), `AcceptanceCriteria`, `TestStrategy`, `Risks`, and `Report`: overwriting a field that already holds a value fails unless `--force` is passed. First writes to an empty field are unaffected. This gives one-writer-per-field at the command boundary.
 - `delete` calls `OrphanChildren` to set `Parent = nil` on direct children before removing the task.
 - Every successful `status` transition records a `HistoryEntry` with from/to/by/at/reason.

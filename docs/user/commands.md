@@ -123,6 +123,7 @@ limbo edit <id> [flags]
 | `--test-strategy` | | `""` | How to test the changes |
 | `--risks` | | `""` | Known risks and mitigations |
 | `--report` | | `""` | Completion report |
+| `--force` | | `false` | Overwrite write-once fields (`approach`, `acceptance-criteria`, `test-strategy`, `risks`, `report`) that are already set |
 | `--pretty` | | `false` | Human-readable output showing the updated task |
 
 **Output (JSON)**
@@ -136,6 +137,7 @@ limbo edit <id> [flags]
 - At least one editable flag must be specified (error if no flags provided).
 - Task must exist.
 - Fields not specified in flags are left unchanged.
+- Five fields are **write-once**: `approach` (and its `--action` alias), `acceptance-criteria`, `test-strategy`, `risks`, and `report`. The first write to an empty such field succeeds; overwriting one that already holds a value is refused with `refusing to overwrite write-once field(s) already set: <names> (use --force to override)`. Pass `--force` to overwrite. The other editable fields (`name`, `description`, `verify`, `result`, `scope-out`, `affected-areas`) are not write-once and overwrite freely.
 - Non-editable fields (status, parent, blockedBy, owner, notes, history, created) are preserved. Use dedicated commands (`status`, `parent`/`unparent`, `block`/`unblock`, `claim`/`unclaim`, `note`) for those.
 
 ---

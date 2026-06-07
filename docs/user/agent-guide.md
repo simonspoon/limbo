@@ -181,3 +181,4 @@ limbo import backup.json --replace
 - Manually blocked tasks cannot transition until unblocked
 - When marked `done`, auto-removed from all other tasks' `blockedBy` lists
 - Manual block (`limbo block <id> --reason "..."`) freezes a task; unblock (`limbo unblock <id>`) restores it
+- `edit` treats `--approach` (and `--action`), `--acceptance-criteria`, `--test-strategy`, `--risks`, and `--report` as write-once: once set, overwriting them fails unless `--force` is passed (one writer per field across agents)
