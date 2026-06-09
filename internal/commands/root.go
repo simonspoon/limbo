@@ -108,4 +108,5 @@ func init() {
 	rootCmd.AddCommand(exportCmd)
 	rootCmd.AddCommand(importCmd)
 	rootCmd.AddCommand(archiveCmd)
+	rootCmd.AddCommand(docCmd)
 }

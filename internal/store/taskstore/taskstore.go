@@ -28,6 +28,7 @@ import (
 
 	"github.com/simonspoon/limbo/internal/models"
 	"github.com/simonspoon/limbo/internal/store"
+	"github.com/simonspoon/limbo/internal/store/docstore"
 	"github.com/simonspoon/limbo/internal/store/jsonstore"
 )
 
@@ -66,15 +67,22 @@ type archiveEnvelope struct {
 // the root for run-lock placement.
 type Store struct {
 	backend store.Store
+	docs    *docstore.DocStore
 	root    string
 }
 
 // New constructs a facade over a jsonstore rooted at the given central storage
 // path. The path need not exist yet; the backend treats a missing root as an
-// empty store at revision 0.
+// empty store at revision 0. The parallel doc backend is rooted at the same
+// central path and operates under <root>/docs/.
 func New(root string) *Store {
-	return &Store{backend: jsonstore.New(root), root: root}
+	return &Store{backend: jsonstore.New(root), docs: docstore.New(root), root: root}
 }
+
+// Docs exposes the parallel document backend so the command layer can reach doc
+// IO through the existing facade. The doc backend operates under <root>/docs/
+// and shares the same store.lock as the task backend.
+func (s *Store) Docs() *docstore.DocStore { return s.docs }
 
 // Backend exposes the underlying Store seam for callers (e.g. the --if-revision
 // guard) that need the minimal interface directly.

@@ -3,6 +3,7 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 
 	"github.com/simonspoon/limbo/internal/models"
 	"github.com/spf13/cobra"
@@ -40,6 +41,22 @@ func runExport(cmd *cobra.Command, args []string) error {
 	revision, err := store.Revision()
 	if err != nil {
 		return err
+	}
+
+	// AC-7 portability floor: export does NOT include project doc bodies. When
+	// docs exist, emit a single deterministic warning to stderr naming the docs
+	// path. This Docs().List() runs after the task load has fully completed and
+	// released its lock, so the two lock acquisitions are sequential, never
+	// nested (R2/R11). The warning does not affect stdout JSON.
+	docs, err := store.Docs().List()
+	if err != nil {
+		return err
+	}
+	if len(docs) > 0 {
+		docsPath := filepath.Join(store.GetRootDir(), "docs")
+		fmt.Fprintf(cmd.ErrOrStderr(),
+			"limbo: export does not include project docs (%d docs at %s); doc bodies are not exported.\n",
+			len(docs), docsPath)
 	}
 
 	exportData := exportEnvelope{

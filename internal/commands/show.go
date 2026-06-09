@@ -168,6 +168,10 @@ func printTaskDetails(task *models.Task, blockers, blocks []blockerInfo) {
 		white.Printf("Owner:       %s\n", *task.Owner)
 	}
 
+	if len(task.LinkedDocs) > 0 {
+		white.Printf("Linked Docs: %v\n", task.LinkedDocs)
+	}
+
 	if len(blockers) > 0 {
 		fmt.Println()
 		yellow.Println("Blocked by:")

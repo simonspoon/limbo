@@ -41,6 +41,7 @@ type Task struct {
 	Owner              *string        `json:"owner,omitempty"`
 	Notes              []Note         `json:"notes,omitempty"`
 	History            []HistoryEntry `json:"history,omitempty"`
+	LinkedDocs         []string       `json:"linkedDocs,omitempty"`
 	ManualBlockReason  string         `json:"manualBlockReason,omitempty"`
 	BlockedFromStage   string         `json:"blockedFromStage,omitempty"`
 	Created            time.Time      `json:"created"`
