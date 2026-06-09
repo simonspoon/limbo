@@ -12,13 +12,13 @@ import (
 // backend — the JSON backend lands in a later task.
 type stubStore struct{}
 
-func (stubStore) Load() ([]models.Task, error)         { return nil, nil }
-func (stubStore) SaveAll(tasks []models.Task) error    { return nil }
-func (stubStore) Revision() (int, error)               { return 0, nil }
-func (stubStore) AddTask(task models.Task) error       { return nil }
-func (stubStore) UpdateTask(task models.Task) error    { return nil }
-func (stubStore) DeleteTask(id string) error           { return nil }
-func (stubStore) AppendNote(id, content string) error  { return nil }
+func (stubStore) Load() ([]models.Task, error)        { return nil, nil }
+func (stubStore) SaveAll(tasks []models.Task) error   { return nil }
+func (stubStore) Revision() (int, error)              { return 0, nil }
+func (stubStore) AddTask(task models.Task) error      { return nil }
+func (stubStore) UpdateTask(task models.Task) error   { return nil }
+func (stubStore) DeleteTask(id string) error          { return nil }
+func (stubStore) AppendNote(id, content string) error { return nil }
 func (stubStore) ReadContext(taskID string) (string, error) {
 	return "", nil
 }

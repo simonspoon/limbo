@@ -182,11 +182,11 @@ func TestCountBlocked(t *testing.T) {
 		"cccc": {ID: "cccc", Status: models.StatusCaptured},
 	}
 	tasks := []models.Task{
-		{ID: "t001", Status: models.StatusCaptured},                                    // not blocked
-		{ID: "t002", Status: models.StatusInProgress, ManualBlockReason: "halt"},       // manual
-		{ID: "t003", Status: models.StatusCaptured, BlockedBy: []string{"cccc"}},       // dep-blocked (todo blocker)
-		{ID: "t004", Status: models.StatusCaptured, BlockedBy: []string{"bbbb"}},       // not blocked (done blocker)
-		{ID: "t005", Status: models.StatusReady, BlockedBy: []string{"cccc", "bbbb"}},  // dep-blocked
+		{ID: "t001", Status: models.StatusCaptured},                                   // not blocked
+		{ID: "t002", Status: models.StatusInProgress, ManualBlockReason: "halt"},      // manual
+		{ID: "t003", Status: models.StatusCaptured, BlockedBy: []string{"cccc"}},      // dep-blocked (todo blocker)
+		{ID: "t004", Status: models.StatusCaptured, BlockedBy: []string{"bbbb"}},      // not blocked (done blocker)
+		{ID: "t005", Status: models.StatusReady, BlockedBy: []string{"cccc", "bbbb"}}, // dep-blocked
 	}
 	assert.Equal(t, 3, countBlocked(tasks, allMap))
 }
